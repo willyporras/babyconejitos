@@ -150,7 +150,7 @@
 
     .product-image {
       width: 100%;
-      height: 180px;
+      height: 200px;
       object-fit: contain;
       border-radius: 8px;
       background-color: #f9fafb;
@@ -299,6 +299,34 @@
     inputEl.value = inputEl.value.slice(0, -1);
   }
 
+  // Convierte enlaces de Google Drive en enlaces directos de imagen si fuera necesario
+  function formatearUrlImagen(url) {
+    if (!url || typeof url !== 'string') return '';
+    url = url.trim();
+    if (!url.startsWith('http')) return '';
+
+    // Si es un enlace de Google Drive del tipo /file/d/ID/view
+    if (url.includes('drive.google.com') && url.includes('/file/d/')) {
+      const match = url.match(/\/file\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+    }
+    return url;
+  }
+
+  // Formatea el precio para mostrar siempre 2 decimales (ej: S/ 45.00)
+  function formatearPrecio(precioRaw) {
+    if (!precioRaw) return "S/ --";
+    // Extraer solo números y puntos
+    let numeroLimpio = String(precioRaw).replace(/[^0-9.-]/g, '');
+    let num = parseFloat(numeroLimpio);
+
+    if (isNaN(num)) return String(precioRaw);
+
+    return "S/ " + num.toFixed(2);
+  }
+
   async function buscarProducto() {
     const codigo = inputEl.value.trim().toUpperCase();
     if (!codigo) return;
@@ -325,19 +353,22 @@
           tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Sin tallas disponibles</span>`;
         }
 
-        const imgUrl = (data.imagen && String(data.imagen).startsWith('http')) 
-          ? data.imagen 
-          : 'https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Sin+Imagen';
+        const urlFinalImagen = formatearUrlImagen(data.imagen);
+        const precioFormateado = formatearPrecio(data.precio);
+
+        const imgHTML = urlFinalImagen 
+          ? `<img src="${urlFinalImagen}" alt="Modelo ${data.codigo}" class="product-image" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Imagen+no+disponible';">`
+          : `<div class="product-image" style="display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:13px;">Sin Imagen</div>`;
 
         resultEl.innerHTML = `
           <div class="product-card">
-            <img src="${imgUrl}" alt="Imagen del modelo" class="product-image">
+            ${imgHTML}
             <div class="product-title">Modelo: ${data.codigo}</div>
             
             <div class="info-row">
               <div class="info-block">
                 <div class="info-label">Precio</div>
-                <div class="info-value-price">${data.precio}</div>
+                <div class="info-value-price">${precioFormateado}</div>
               </div>
               <div class="info-block">
                 <div class="info-label">Stock Total</div>
