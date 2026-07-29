@@ -40,6 +40,7 @@
       gap: 10px;
     }
 
+    /* Fila superior: 50% Caja, 25% Buscar, 25% Borrar */
     .search-row {
       display: flex;
       gap: 8px;
@@ -47,7 +48,7 @@
     }
 
     .search-input {
-      flex: 6;
+      flex: 2; /* Representa el 50% (2 de 4 partes) */
       min-width: 0;
       height: 48px;
       font-size: 20px;
@@ -67,7 +68,7 @@
     }
 
     .btn-search {
-      flex: 4;
+      flex: 1; /* Representa el 25% (1 de 4 partes) */
       min-width: 0;
       height: 48px;
       background-color: #2563eb;
@@ -80,10 +81,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background-color 0.2s ease;
     }
 
     .btn-search:active {
       background-color: #1d4ed8;
+    }
+
+    .btn-clear {
+      flex: 1; /* Representa el 25% (1 de 4 partes) */
+      min-width: 0;
+      height: 48px;
+      background-color: #e5e7eb;
+      color: #374151;
+      font-weight: 700;
+      font-size: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-clear:active {
+      background-color: #d1d5db;
     }
 
     .keypad-grid {
@@ -250,6 +273,7 @@
     <div class="search-row">
       <input type="text" id="codeInput" class="search-input" placeholder="CÓDIGO" maxlength="5" readonly inputmode="none">
       <button class="btn-search" onclick="buscarProducto()">Buscar</button>
+      <button class="btn-clear" onclick="limpiarConsulta()">Borrar</button>
     </div>
 
     <div class="keypad-grid">
@@ -299,40 +323,45 @@
     inputEl.value = inputEl.value.slice(0, -1);
   }
 
-// Convierte enlaces de Google Drive a enlaces directos de imagen
-function formatearUrlImagen(url) {
-  if (!url || typeof url !== 'string') return '';
-  url = url.trim();
-  if (!url.startsWith('http')) return '';
+  function limpiarConsulta() {
+    inputEl.value = '';
+    resultEl.innerHTML = `
+      <div class="placeholder-msg">
+        Ingresa un código (máx. 5) y pulsa <b>Buscar</b>.
+      </div>
+    `;
+  }
 
-  let fileId = null;
+  // Convierte enlaces de Google Drive a enlaces directos de imagen
+  function formatearUrlImagen(url) {
+    if (!url || typeof url !== 'string') return '';
+    url = url.trim();
+    if (!url.startsWith('http')) return '';
 
-  if (url.includes('drive.google.com')) {
-    // Captura ID en formato: /file/d/ID_AQUI/view
-    const matchFile = url.match(/\/file\/d\/([^\/\?]+)/);
-    if (matchFile && matchFile[1]) {
-      fileId = matchFile[1];
-    } else {
-      // Captura ID en formato: open?id=ID_AQUI o uc?id=ID_AQUI
-      const matchId = url.match(/id=([^&]+)/);
-      if (matchId && matchId[1]) {
-        fileId = matchId[1];
+    let fileId = null;
+
+    if (url.includes('drive.google.com')) {
+      const matchFile = url.match(/\/file\/d\/([^\/\?]+)/);
+      if (matchFile && matchFile[1]) {
+        fileId = matchFile[1];
+      } else {
+        const matchId = url.match(/id=([^&]+)/);
+        if (matchId && matchId[1]) {
+          fileId = matchId[1];
+        }
       }
     }
-  }
 
-  // Si detectó un ID de Google Drive, genera la URL directa ultra rápida
-  if (fileId) {
-    return `https://lh3.googleusercontent.com/d/${fileId}`;
-  }
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}`;
+    }
 
-  return url;
-}
+    return url;
+  }
 
   // Formatea el precio para mostrar siempre 2 decimales (ej: S/ 45.00)
   function formatearPrecio(precioRaw) {
     if (!precioRaw) return "S/ --";
-    // Extraer solo números y puntos
     let numeroLimpio = String(precioRaw).replace(/[^0-9.-]/g, '');
     let num = parseFloat(numeroLimpio);
 
@@ -360,22 +389,20 @@ function formatearUrlImagen(url) {
         const stockClass = stockNum > 0 ? 'stock-in' : 'stock-out';
         const stockText = stockNum > 0 ? `${stockNum} pares` : 'Agotado';
 
-let tallasHTML = '';
-if (data.tallas && data.tallas.length > 0) {
-  tallasHTML = data.tallas.map(item => {
-    // Caso 1: Viene como objeto {talla: "21", cantidad: 2}
-    if (typeof item === 'object' && item !== null) {
-      const nombreTalla = item.talla || '';
-      const cantidad = item.cantidad || 1;
-      const contador = cantidad > 1 ? `<span style="font-size:11px; color:#2563eb; margin-left:3px; font-weight:800;">×${cantidad}</span>` : '';
-      return `<span class="size-badge">${nombreTalla}${contador}</span>`;
-    } 
-    // Caso 2: Compatibilidad por si viene como texto simple "21"
-    return `<span class="size-badge">${item}</span>`;
-  }).join('');
-} else {
-  tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Agotado</span>`;
-}
+        let tallasHTML = '';
+        if (data.tallas && data.tallas.length > 0) {
+          tallasHTML = data.tallas.map(item => {
+            if (typeof item === 'object' && item !== null) {
+              const nombreTalla = item.talla || '';
+              const cantidad = item.cantidad || 1;
+              const contador = cantidad > 1 ? `<span style="font-size:11px; color:#2563eb; margin-left:3px; font-weight:800;">×${cantidad}</span>` : '';
+              return `<span class="size-badge">${nombreTalla}${contador}</span>`;
+            } 
+            return `<span class="size-badge">${item}</span>`;
+          }).join('');
+        } else {
+          tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Agotado</span>`;
+        }
 
         const urlFinalImagen = formatearUrlImagen(data.imagen);
         const precioFormateado = formatearPrecio(data.precio);
