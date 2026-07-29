@@ -299,21 +299,35 @@
     inputEl.value = inputEl.value.slice(0, -1);
   }
 
-  // Convierte enlaces de Google Drive en enlaces directos de imagen si fuera necesario
-  function formatearUrlImagen(url) {
-    if (!url || typeof url !== 'string') return '';
-    url = url.trim();
-    if (!url.startsWith('http')) return '';
+  // Convierte enlaces de Google Drive a enlaces directos de imagen
+function formatearUrlImagen(url) {
+  if (!url || typeof url !== 'string') return '';
+  url = url.trim();
+  if (!url.startsWith('http')) return '';
 
-    // Si es un enlace de Google Drive del tipo /file/d/ID/view
-    if (url.includes('drive.google.com') && url.includes('/file/d/')) {
-      const match = url.match(/\/file\/d\/([^\/]+)/);
-      if (match && match[1]) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  // Extraer el ID de Google Drive desde varios formatos de enlace posibles
+  let fileId = null;
+
+  if (url.includes('drive.google.com')) {
+    // Formato: .../file/d/ID_AQUI/view...
+    const matchFile = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (matchFile && matchFile[1]) {
+      fileId = matchFile[1];
+    } else {
+      // Formato: ...open?id=ID_AQUI
+      const matchId = url.match(/id=([^&]+)/);
+      if (matchId && matchId[1]) {
+        fileId = matchId[1];
       }
     }
-    return url;
   }
+
+  if (fileId) {
+    return `https://lh3.googleusercontent.com/d/${fileId}`;
+  }
+
+  return url;
+}
 
   // Formatea el precio para mostrar siempre 2 decimales (ej: S/ 45.00)
   function formatearPrecio(precioRaw) {
