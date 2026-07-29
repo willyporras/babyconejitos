@@ -360,19 +360,21 @@ function formatearUrlImagen(url) {
         const stockClass = stockNum > 0 ? 'stock-in' : 'stock-out';
         const stockText = stockNum > 0 ? `${stockNum} pares` : 'Agotado';
 
-        let tallasHTML = '';
+let tallasHTML = '';
 if (data.tallas && data.tallas.length > 0) {
   tallasHTML = data.tallas.map(item => {
-    // Si item es un objeto {talla: "21", cantidad: 2}
-    if (typeof item === 'object' && item.talla) {
-      const contador = item.cantidad > 1 ? `<span style="font-size:11px; color:#2563eb; margin-left:3px; font-weight:800;">×${item.cantidad}</span>` : '';
-      return `<span class="size-badge">${item.talla}${contador}</span>`;
+    // Caso 1: Viene como objeto {talla: "21", cantidad: 2}
+    if (typeof item === 'object' && item !== null) {
+      const nombreTalla = item.talla || '';
+      const cantidad = item.cantidad || 1;
+      const contador = cantidad > 1 ? `<span style="font-size:11px; color:#2563eb; margin-left:3px; font-weight:800;">×${cantidad}</span>` : '';
+      return `<span class="size-badge">${nombreTalla}${contador}</span>`;
     } 
-    // Compatibilidad por si viene como texto simple
+    // Caso 2: Compatibilidad por si viene como texto simple "21"
     return `<span class="size-badge">${item}</span>`;
   }).join('');
 } else {
-  tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Sin tallas disponibles</span>`;
+  tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Agotado</span>`;
 }
 
         const urlFinalImagen = formatearUrlImagen(data.imagen);
