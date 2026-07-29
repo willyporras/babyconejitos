@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Consulta de Calzado</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #f3f4f6;
+      color: #1f2937;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 430px;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-section {
+      padding: 16px;
+      background-color: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .search-input {
+      flex: 6;
+      min-width: 0;
+      height: 48px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-align: center;
+      text-transform: uppercase;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: #111827;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: #2563eb;
+    }
+
+    .btn-search {
+      flex: 4;
+      min-width: 0;
+      height: 48px;
+      background-color: #2563eb;
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-search:active {
+      background-color: #1d4ed8;
+    }
+
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+
+    .key-btn {
+      height: 48px;
+      font-size: 20px;
+      font-weight: 700;
+      background-color: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      color: #1f2937;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .key-btn:active {
+      background-color: #e5e7eb;
+      transform: scale(0.97);
+    }
+
+    .key-btn.alpha {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    .key-btn.backspace {
+      background-color: #fee2e2;
+      color: #dc2626;
+      border-color: #fca5a5;
+      font-size: 22px;
+    }
+
+    .result-section {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .product-card {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      border-radius: 8px;
+      background-color: #f9fafb;
+      margin-bottom: 12px;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #e5e7eb;
+    }
+
+    .info-block {
+      text-align: center;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .info-value-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #059669;
+    }
+
+    .info-value-stock {
+      font-size: 16px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .stock-in { background-color: #d1fae5; color: #065f46; }
+    .stock-out { background-color: #fee2e2; color: #991b1b; }
+
+    .sizes-section {
+      width: 100%;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+      text-align: center;
+    }
+
+    .sizes-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .size-badge {
+      min-width: 38px;
+      height: 34px;
+      padding: 0 8px;
+      background-color: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .placeholder-msg {
+      margin: auto 0;
+      color: #9ca3af;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  
+  <div class="control-section">
+    <div class="search-row">
+      <input type="text" id="codeInput" class="search-input" placeholder="CÓDIGO" maxlength="5" readonly inputmode="none">
+      <button class="btn-search" onclick="buscarProducto()">Buscar</button>
+    </div>
+
+    <div class="keypad-grid">
+      <button class="key-btn" onclick="pressKey('1')">1</button>
+      <button class="key-btn" onclick="pressKey('2')">2</button>
+      <button class="key-btn" onclick="pressKey('3')">3</button>
+
+      <button class="key-btn" onclick="pressKey('4')">4</button>
+      <button class="key-btn" onclick="pressKey('5')">5</button>
+      <button class="key-btn" onclick="pressKey('6')">6</button>
+
+      <button class="key-btn" onclick="pressKey('7')">7</button>
+      <button class="key-btn" onclick="pressKey('8')">8</button>
+      <button class="key-btn" onclick="pressKey('9')">9</button>
+
+      <button class="key-btn alpha" onclick="pressKey('A')">A</button>
+      <button class="key-btn alpha" onclick="pressKey('Z')">Z</button>
+      <button class="key-btn" onclick="pressKey('0')">0</button>
+
+      <button class="key-btn alpha" onclick="pressKey('N')">N</button>
+      <button class="key-btn alpha" onclick="pressKey('B')">B</button>
+      <button class="key-btn backspace" onclick="clearInput()">⌫</button>
+    </div>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="placeholder-msg">
+      Ingresa un código (máx. 5) y pulsa <b>Buscar</b>.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+  const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
+
+  const inputEl = document.getElementById('codeInput');
+  const resultEl = document.getElementById('resultSection');
+
+  function pressKey(char) {
+    if (inputEl.value.length < 5) {
+      inputEl.value += char;
+    }
+  }
+
+  function clearInput() {
+    inputEl.value = inputEl.value.slice(0, -1);
+  }
+
+  async function buscarProducto() {
+    const codigo = inputEl.value.trim().toUpperCase();
+    if (!codigo) return;
+
+    resultEl.innerHTML = `
+      <div class="placeholder-msg">
+        Consultando <b>${codigo}</b>...
+      </div>
+    `;
+
+    try {
+      const response = await fetch(`${SCRIPT_URL}?codigo=${encodeURIComponent(codigo)}`);
+      const data = await response.json();
+
+      if (data.encontrado) {
+        const stockNum = parseInt(data.stock) || 0;
+        const stockClass = stockNum > 0 ? 'stock-in' : 'stock-out';
+        const stockText = stockNum > 0 ? `${stockNum} pares` : 'Agotado';
+
+        let tallasHTML = '';
+        if (data.tallas && data.tallas.length > 0) {
+          tallasHTML = data.tallas.map(t => `<span class="size-badge">${t}</span>`).join('');
+        } else {
+          tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Sin tallas disponibles</span>`;
+        }
+
+        const imgUrl = (data.imagen && String(data.imagen).startsWith('http')) 
+          ? data.imagen 
+          : 'https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Sin+Imagen';
+
+        resultEl.innerHTML = `
+          <div class="product-card">
+            <img src="${imgUrl}" alt="Imagen del modelo" class="product-image">
+            <div class="product-title">Modelo: ${data.codigo}</div>
+            
+            <div class="info-row">
+              <div class="info-block">
+                <div class="info-label">Precio</div>
+                <div class="info-value-price">${data.precio}</div>
+              </div>
+              <div class="info-block">
+                <div class="info-label">Stock Total</div>
+                <div class="info-value-stock ${stockClass}">${stockText}</div>
+              </div>
+            </div>
+
+            <div class="sizes-section">
+              <div class="info-label">Tallas Disponibles</div>
+              <div class="sizes-container">
+                ${tallasHTML}
+              </div>
+            </div>
+
+          </div>
+        `;
+      } else {
+        resultEl.innerHTML = `
+          <div class="placeholder-msg" style="color: #dc2626; font-weight: 600;">
+            Código "${codigo}" no encontrado.
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error(error);
+      resultEl.innerHTML = `
+        <div class="placeholder-msg" style="color: #dc2626;">
+          Error de conexión al consultar los datos.
+        </div>
+      `;
+    }
+  }
+</script>
+
+</body>
+</html>
