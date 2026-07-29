@@ -299,22 +299,21 @@
     inputEl.value = inputEl.value.slice(0, -1);
   }
 
-  // Convierte enlaces de Google Drive a enlaces directos de imagen
+// Convierte enlaces de Google Drive a enlaces directos de imagen
 function formatearUrlImagen(url) {
   if (!url || typeof url !== 'string') return '';
   url = url.trim();
   if (!url.startsWith('http')) return '';
 
-  // Extraer el ID de Google Drive desde varios formatos de enlace posibles
   let fileId = null;
 
   if (url.includes('drive.google.com')) {
-    // Formato: .../file/d/ID_AQUI/view...
+    // Captura ID en formato: /file/d/ID_AQUI/view
     const matchFile = url.match(/\/file\/d\/([^\/\?]+)/);
     if (matchFile && matchFile[1]) {
       fileId = matchFile[1];
     } else {
-      // Formato: ...open?id=ID_AQUI
+      // Captura ID en formato: open?id=ID_AQUI o uc?id=ID_AQUI
       const matchId = url.match(/id=([^&]+)/);
       if (matchId && matchId[1]) {
         fileId = matchId[1];
@@ -322,6 +321,7 @@ function formatearUrlImagen(url) {
     }
   }
 
+  // Si detectó un ID de Google Drive, genera la URL directa ultra rápida
   if (fileId) {
     return `https://lh3.googleusercontent.com/d/${fileId}`;
   }
