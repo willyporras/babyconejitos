@@ -215,6 +215,13 @@
       color: #059669;
     }
 
+    .info-value-price-sub {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563eb;
+      margin-top: 2px;
+    }
+
     .info-value-stock {
       font-size: 16px;
       font-weight: 700;
@@ -382,16 +389,16 @@
 
     try {
       const response = await fetch(`${SCRIPT_URL}?codigo=${encodeURIComponent(codigo)}`);
-      const data = await response.json();
+      const respuesta = await response.json();
 
-      if (data.encontrado) {
-        const stockNum = parseInt(data.stock) || 0;
+      if (respuesta.encontrado) {
+        const stockNum = parseInt(respuesta.stock) || 0;
         const stockClass = stockNum > 0 ? 'stock-in' : 'stock-out';
         const stockText = stockNum > 0 ? `${stockNum} pares` : 'Agotado';
 
         let tallasHTML = '';
-        if (data.tallas && data.tallas.length > 0) {
-          tallasHTML = data.tallas.map(item => {
+        if (respuesta.tallas && respuesta.tallas.length > 0) {
+          tallasHTML = respuesta.tallas.map(item => {
             if (typeof item === 'object' && item !== null) {
               const nombreTalla = item.talla || '';
               const cantidad = item.cantidad || 1;
@@ -404,22 +411,23 @@
           tallasHTML = `<span style="font-size:13px; color:#dc2626; font-weight:600;">Agotado</span>`;
         }
 
-        const urlFinalImagen = formatearUrlImagen(data.imagen);
-        const precioFormateado = formatearPrecio(data.precio);
+        const urlFinalImagen = formatearUrlImagen(respuesta.imagen);
+        const precioFormateado = formatearPrecio(respuesta.precio);
 
         const imgHTML = urlFinalImagen 
-          ? `<img src="${urlFinalImagen}" alt="Modelo ${data.codigo}" class="product-image" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Imagen+no+disponible';">`
+          ? `<img src="${urlFinalImagen}" alt="Modelo ${respuesta.codigo}" class="product-image" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Imagen+no+disponible';">`
           : `<div class="product-image" style="display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:13px;">Sin Imagen</div>`;
 
         resultEl.innerHTML = `
           <div class="product-card">
             ${imgHTML}
-            <div class="product-title">Modelo: ${data.codigo}</div>
+            <div class="product-title">Modelo: ${respuesta.codigo}</div>
             
             <div class="info-row">
               <div class="info-block">
                 <div class="info-label">Precio</div>
-                <div class="info-value-price">${precioFormateado}</div>
+                <div class="info-value-price" id="precioElemento">${precioFormateado}</div>
+                <div class="info-value-price-sub" id="precioTalla22Elemento" style="display: none;"></div>
               </div>
               <div class="info-block">
                 <div class="info-label">Stock Total</div>
@@ -436,6 +444,19 @@
 
           </div>
         `;
+
+        // Actualizar precio de la Talla 22 si viene en la respuesta
+        const elemTalla22 = document.getElementById("precioTalla22Elemento");
+        if (elemTalla22) {
+          if (respuesta.precioTalla22) {
+            const precioT22Formateado = formatearPrecio(respuesta.precioTalla22);
+            elemTalla22.innerText = `(${precioT22Formateado} en Talla 22)`;
+            elemTalla22.style.display = "block";
+          } else {
+            elemTalla22.style.display = "none";
+          }
+        }
+
       } else {
         resultEl.innerHTML = `
           <div class="placeholder-msg" style="color: #dc2626; font-weight: 600;">
