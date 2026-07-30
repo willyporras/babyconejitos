@@ -238,7 +238,7 @@
       display: inline-block;
     }
 
-    .stock-in { background-color: #d1fae5; color: #065f46; }
+    .stock-in { background-color: #d1fae5; color: #f3f4f6; }
     .stock-out { background-color: #fee2e2; color: #991b1b; }
 
     .sizes-section {
@@ -261,7 +261,7 @@
       min-width: 36px;
       height: 32px;
       padding: 0 8px;
-      background-color: #f3f4f6;
+      background-color: #d1fae5;
       border: 1px solid #d1d5db;
       border-radius: 6px;
       font-size: 14px;
@@ -408,7 +408,7 @@
             if (typeof item === 'object' && item !== null) {
               const nombreTalla = item.talla || '';
               const cantidad = item.cantidad || 1;
-              const contador = cantidad > 1 ? `<span style="font-size:11px; color:#2563eb; margin-left:3px; font-weight:800;">×${cantidad}</span>` : '';
+              const contador = cantidad > 1 ? `<span style="font-size:13px; color:#2563eb; margin-left:3px; font-weight:800;">×${cantidad}</span>` : '';
               return `<span class="size-badge">${nombreTalla}${contador}</span>`;
             } 
             return `<span class="size-badge">${item}</span>`;
