@@ -18,7 +18,6 @@
       color: #1f2937;
       display: flex;
       justify-content: center;
-      /* 100dvh congela el alto de la pantalla sin que la barra del navegador la estire */
       height: 100dvh;
       overflow: hidden;
     }
@@ -34,7 +33,7 @@
       overflow: hidden;
     }
 
-    /* PRIMERA PARTE: Fija e inamovible arriba */
+    /* PRIMERA PARTE: Control e ingreso */
     .control-section {
       padding: 12px;
       background-color: #f9fafb;
@@ -154,17 +153,18 @@
       font-size: 20px;
     }
 
-    /* SEGUNDA PARTE: Tarjeta de resultados optimizada */
+    /* SEGUNDA PARTE: Tarjeta de resultados */
     .result-section {
       flex: 1;
       padding: 12px;
-      overflow-y: auto; /* Scroll interno aislado si la pantalla es muy pequeña */
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     .product-card {
+      position: relative;
       width: 100%;
       background: #ffffff;
       border: 1px solid #e5e7eb;
@@ -176,7 +176,23 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
-    /* Altura ajustada para liberar espacio vertical sin perder detalle */
+    /* Badge de Oferta */
+    .badge-oferta {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #dc2626;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+      z-index: 2;
+    }
+
     .product-image {
       width: 100%;
       max-height: 155px;
@@ -215,6 +231,16 @@
       margin-bottom: 2px;
     }
 
+    /* Estilos para precio regular y precio anterior tachado */
+    .info-value-price-old {
+      font-size: 13px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-decoration: line-through;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
     .info-value-price {
       font-size: 22px;
       font-weight: 800;
@@ -222,7 +248,10 @@
       line-height: 1.1;
     }
 
-    /* Ajuste de tamaño a 14px solicitado */
+    .info-value-price.is-offer {
+      color: #dc2626;
+    }
+
     .info-value-price-sub {
       font-size: 14px;
       font-weight: 700;
@@ -420,19 +449,29 @@
         const urlFinalImagen = formatearUrlImagen(respuesta.imagen);
         const precioFormateado = formatearPrecio(respuesta.precio);
 
+        // Lógica visual para la oferta
+        const esOferta = respuesta.esOferta === true;
+        const badgeOfertaHTML = esOferta ? `<div class="badge-oferta">Oferta</div>` : '';
+        const precioAnteriorHTML = esOferta && respuesta.precioAnterior 
+          ? `<div class="info-value-price-old">${formatearPrecio(respuesta.precioAnterior)}</div>` 
+          : '';
+        const clasePrecioFinal = esOferta ? 'info-value-price is-offer' : 'info-value-price';
+
         const imgHTML = urlFinalImagen 
           ? `<img src="${urlFinalImagen}" alt="Modelo ${respuesta.codigo}" class="product-image" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=Imagen+no+disponible';">`
           : `<div class="product-image" style="display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:13px;">Sin Imagen</div>`;
 
         resultEl.innerHTML = `
           <div class="product-card">
+            ${badgeOfertaHTML}
             ${imgHTML}
             <div class="product-title">Modelo: ${respuesta.codigo}</div>
             
             <div class="info-row">
               <div class="info-block">
                 <div class="info-label">Precio</div>
-                <div class="info-value-price" id="precioElemento">${precioFormateado}</div>
+                ${precioAnteriorHTML}
+                <div class="${clasePrecioFinal}" id="precioElemento">${precioFormateado}</div>
                 <div class="info-value-price-sub" id="precioTalla22Elemento" style="display: none;"></div>
               </div>
               <div class="info-block">
@@ -451,7 +490,7 @@
           </div>
         `;
 
-        // Renderizado dinámico de la Talla 22 con el nuevo formato
+        // Renderizado dinámico de la Talla 22
         const elemTalla22 = document.getElementById("precioTalla22Elemento");
         if (elemTalla22) {
           if (respuesta.precioTalla22) {
