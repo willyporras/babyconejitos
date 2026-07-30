@@ -236,9 +236,11 @@
       font-size: 13px;
       font-weight: 600;
       color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .info-value-price-old span {
       text-decoration: line-through;
-      line-height: 1;
-      margin-bottom: 2px;
     }
 
     .info-value-price {
@@ -449,11 +451,11 @@
         const urlFinalImagen = formatearUrlImagen(respuesta.imagen);
         const precioFormateado = formatearPrecio(respuesta.precio);
 
-        // Lógica visual para la oferta
+        // Lógica visual para la oferta (FILA 1: Nombre, FILA 2: Oferta Rojo, FILA 3: Original Tachado)
         const esOferta = respuesta.esOferta === true;
         const badgeOfertaHTML = esOferta ? `<div class="badge-oferta">Oferta</div>` : '';
-        const precioAnteriorHTML = esOferta && respuesta.precioAnterior 
-          ? `<div class="info-value-price-old">${formatearPrecio(respuesta.precioAnterior)}</div>` 
+        const precioAnteriorHTML = (esOferta && respuesta.precioAnterior)
+          ? `<div class="info-value-price-old">Original: <span>${formatearPrecio(respuesta.precioAnterior)}</span></div>` 
           : '';
         const clasePrecioFinal = esOferta ? 'info-value-price is-offer' : 'info-value-price';
 
@@ -470,8 +472,8 @@
             <div class="info-row">
               <div class="info-block">
                 <div class="info-label">Precio</div>
-                ${precioAnteriorHTML}
                 <div class="${clasePrecioFinal}" id="precioElemento">${precioFormateado}</div>
+                ${precioAnteriorHTML}
                 <div class="info-value-price-sub" id="precioTalla22Elemento" style="display: none;"></div>
               </div>
               <div class="info-block">
