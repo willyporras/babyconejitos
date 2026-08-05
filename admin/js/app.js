@@ -901,14 +901,14 @@ function mostrarToast(texto){
 =      NAVEGACIÓN ENTRE PANTALLAS         =
 =========================================*/
 
-const pantallaBusqueda =
-document.getElementById("pantallaBusqueda");
+//const pantallaBusqueda =
+//document.getElementById("pantallaBusqueda");
 
-const pantallaRegistro =
-document.getElementById("pantallaRegistro");
+//const pantallaRegistro =
+//document.getElementById("pantallaRegistro");
 
-const btnVolverBusqueda =
-document.getElementById("volverBusqueda");
+//const btnVolverBusqueda =
+//document.getElementById("volverBusqueda");
 
 
 
