@@ -139,8 +139,36 @@ function finishSummary(){
   show('screen-success');
 }
 
+function resetConsultFilters(){
+  $('#consultDate').value='';
+  $('#consultBrand').value='';
+  $('#consultProductCode').value='';
+  $('#consultPurchaseCode').value='';
+}
+
+function resetRegistrationForm(){
+  state.selected=null;
+  state.filters={brand:'',category:'',color:'',code:''};
+  $('#brandInput').value='';
+  $('#categorySelect').value='';
+  updateColors();
+  $('#codeInput').value='';
+  $('#brandSuggestions').innerHTML='';
+  $('#priceInput').value='';
+  $('#notesInput').value='';
+  $('#purchaseDate').value=today;
+}
+
+function exitToPurchases(){
+  resetConsultFilters();
+  resetRegistrationForm();
+  state.detailPurchase=null;
+  show('screen-home');
+}
+
 $('#btnBack').onclick=()=>{
-  const map={'screen-identify':'screen-home','screen-gallery':'screen-identify','screen-register':'screen-gallery','screen-new':'screen-gallery','screen-success':'screen-home'};
+  if(state.screen==='screen-identify' || state.screen==='screen-success'){exitToPurchases();return;}
+  const map={'screen-gallery':'screen-identify','screen-register':'screen-gallery','screen-new':'screen-gallery'};
   show(map[state.screen]||'screen-home');
 };
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
@@ -151,7 +179,7 @@ $('#btnSearch').onclick=()=>{currentFilters();if(!state.filters.brand||!state.fi
 $('#btnNewProduct').onclick=openNewProduct;
 $('#btnRegisterExisting').onclick=()=>{if(!state.selected)return;const ok=addPurchase(state.selected,'#sizesExisting',$('#priceInput').value,$('#purchaseDate').value,$('#notesInput').value);if(ok)finishSummary();};
 $('#btnRegisterNew').onclick=()=>{const p={code:$('#newCode').textContent,brand:$('#newBrand').textContent,category:$('#newCategory').textContent,color:$('#newColor').textContent};const ok=addPurchase(p,'#sizesNew',$('#newPrice').value,today,$('#newNotes').value);if(ok){state.products.push(p);finishSummary();}};
-$('#btnFinish').onclick=()=>{state.session=[];show('screen-home');toast('Sesión finalizada.')};
+$('#btnFinish').onclick=()=>{state.session=[];exitToPurchases();toast('Sesión finalizada.')};
 $('#btnContinueFromSummary').onclick=()=>{state.filters={brand:'',category:'',color:'',code:''};$('#brandInput').value='';$('#categorySelect').value='';updateColors();$('#codeInput').value='';show('screen-identify')};
 $('#btnConsult').onclick=()=>toast('En este prototipo, Consultar Compras aún no está conectado.');
 $('#photoUpload').onclick=()=>toast('Carga de fotografía simulada en este prototipo.');
@@ -176,9 +204,12 @@ function renderPurchases(){
   const pc=$('#consultProductCode').value.trim().toUpperCase(), cp=$('#consultPurchaseCode').value.trim().toUpperCase();
   const rows=allPurchases().filter(x=>(!date||x.date===date)&&(!brand||x.product.brand===brand)&&(!pc||x.product.code.toUpperCase().includes(pc))&&(!cp||x.purchase.toUpperCase().includes(cp)));
   const list=$('#purchaseList');list.innerHTML='';$('#consultEmpty').classList.toggle('hidden',rows.length>0);$('#consultCount').textContent=`${rows.length} ${rows.length===1?'registro':'registros'}`;
-  rows.slice().reverse().forEach(x=>{
+  rows.slice().sort((a,b)=>{
+    const byDate=b.date.localeCompare(a.date);
+    return byDate!==0?byDate:b.purchase.localeCompare(a.purchase);
+  }).forEach(x=>{
     const el=document.createElement('article');el.className='purchase-row';
-    el.innerHTML=`<div class="purchase-thumb"><img src="producto-a255.png" alt="${x.product.code}"></div><div class="purchase-main"><div class="purchase-top"><strong>${x.purchase}</strong><span class="purchase-brand">${x.product.brand}</span>${x.edit?'<span class="edited-tag">⚠ Editada</span>':''}</div><h3>${x.product.code}</h3><p>${formatDateEs(x.date)} · ${x.pairs} pares · Tallas ${sizesText(x.sizes)}</p><p>Total S/ ${(x.pairs*x.price).toFixed(2)}</p></div><button class="secondary-btn purchase-view">Ver detalle →</button>`;
+    el.innerHTML=`<div class="purchase-thumb"><img src="producto-a255.png" alt="${x.product.code}"></div><div class="purchase-main"><div class="purchase-top"><strong>${x.purchase}</strong><span class="purchase-date">📅 ${formatDateEs(x.date)}</span><span class="purchase-brand">${x.product.brand}</span>${x.edit?'<span class="edited-tag">⚠ Editada</span>':''}</div><h3>${x.product.code}</h3><p>${x.pairs} pares · Tallas ${sizesText(x.sizes)}</p><p>Total S/ ${(x.pairs*x.price).toFixed(2)}</p></div><button class="secondary-btn purchase-view">Ver detalle →</button>`;
     el.querySelector('.purchase-view').onclick=()=>openPurchaseDetail(x);list.appendChild(el);
   });
 }
@@ -194,7 +225,7 @@ function buildEditSizes(x){
 function openEdit(){const x=state.detailPurchase;if(!x)return;$('#editProductCode').textContent=x.product.code;$('#editProductName').textContent=`${x.product.brand} · ${x.product.category} · ${x.product.color}`;$('#editPurchaseCode').textContent=x.purchase;$('#editDate').value=x.date;$('#editPrice').value=x.price;$('#editNotes').value=x.notes||'';$('#editReason').value='';buildEditSizes(x);show('screen-edit-purchase')}
 function saveEdit(){const x=state.detailPurchase;if(!x)return;const reason=$('#editReason').value.trim();if(!reason){toast('Indica el motivo de la corrección.');return}const newSizes=readSizes('#sizesEdit'),pairs=newSizes.reduce((a,s)=>a+s.qty,0),price=Number($('#editPrice').value);if(!pairs){toast('Debe quedar al menos un par.');return}if(!Number.isFinite(price)||price<0){toast('Ingresa un precio válido.');return}if(!x.edit)x.edit={originalSizes:sizesText(x.sizes),originalPairs:x.pairs,originalPrice:x.price,reason};else x.edit.reason=reason;x.sizes=newSizes;x.pairs=pairs;x.price=price;x.date=$('#editDate').value;x.notes=$('#editNotes').value.trim();toast('Corrección guardada.');openPurchaseDetail(x)}
 
-$('#btnRunConsult').onclick=renderPurchases;$('#btnClearConsult').onclick=()=>{$('#consultDate').value='';$('#consultBrand').value='';$('#consultProductCode').value='';$('#consultPurchaseCode').value='';renderPurchases()};$('#btnEditPurchase').onclick=openEdit;$('#btnSaveEdit').onclick=saveEdit;
+$('#btnRunConsult').onclick=renderPurchases;$('#btnClearConsult').onclick=()=>{resetConsultFilters();renderPurchases()};$('#btnEditPurchase').onclick=openEdit;$('#btnSaveEdit').onclick=saveEdit;
 
 // Conecta la consulta desde la pantalla de confirmación.
 $('#btnConsult').onclick=()=>{renderPurchases();show('screen-consult')};
@@ -202,9 +233,12 @@ $('#btnConsult').onclick=()=>{renderPurchases();show('screen-consult')};
 // Extiende Volver para las pantallas de consulta.
 const originalBack=$('#btnBack').onclick;
 $('#btnBack').onclick=()=>{
-  const extra={'screen-consult':'screen-home','screen-purchase-detail':'screen-consult','screen-edit-purchase':'screen-purchase-detail'};
+  if(state.screen==='screen-consult'){exitToPurchases();return}
+  const extra={'screen-purchase-detail':'screen-consult','screen-edit-purchase':'screen-purchase-detail'};
   if(extra[state.screen]){show(extra[state.screen]);return}
   originalBack();
 };
+
+$('#btnExitConsult').onclick=exitToPurchases;
 
 renderPurchases();
