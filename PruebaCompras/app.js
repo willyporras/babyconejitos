@@ -157,3 +157,54 @@ $('#btnConsult').onclick=()=>toast('En este prototipo, Consultar Compras aún no
 $('#photoUpload').onclick=()=>toast('Carga de fotografía simulada en este prototipo.');
 
 $('#purchaseDate').value=today;$('#btnBack').style.visibility='hidden';
+
+/* =========================================================
+   CONSULTAR COMPRAS - DATOS FICTICIOS PARA PROTOTIPO
+   ========================================================= */
+state.purchaseHistory = [
+  {purchase:'CP-0012',date:'2026-08-15',product:{code:'A123',brand:'Ericka',category:'Pibe Niña',color:'Rosado',material:'Cuero'},sizes:[{size:'18',qty:1},{size:'19',qty:2},{size:'20',qty:1}],pairs:4,price:19,notes:'Compra de reposición.'},
+  {purchase:'CP-0013',date:'2026-08-15',product:{code:'A028',brand:'Ericka',category:'Pibe Niña',color:'Rosado',material:'Cuero'},sizes:[{size:'18',qty:1},{size:'19',qty:1},{size:'20',qty:1}],pairs:3,price:20,notes:'Sin observaciones.'},
+  {purchase:'CP-0014',date:'2026-08-15',product:{code:'A076',brand:'Kelly',category:'Pibe Niño',color:'Azul',material:'Cuero'},sizes:[{size:'19',qty:1},{size:'20',qty:1},{size:'21',qty:1}],pairs:3,price:20,notes:'Sin observaciones.'}
+];
+state.detailPurchase = null;
+
+function formatDateEs(v){if(!v)return '—';const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}
+function sizesText(sizes){return sizes.map(s=>s.qty>1?`${s.size} (${s.qty})`:s.size).join(', ')}
+function allPurchases(){return [...state.purchaseHistory,...state.session]}
+function renderPurchases(){
+  const date=$('#consultDate').value, brand=$('#consultBrand').value;
+  const pc=$('#consultProductCode').value.trim().toUpperCase(), cp=$('#consultPurchaseCode').value.trim().toUpperCase();
+  const rows=allPurchases().filter(x=>(!date||x.date===date)&&(!brand||x.product.brand===brand)&&(!pc||x.product.code.toUpperCase().includes(pc))&&(!cp||x.purchase.toUpperCase().includes(cp)));
+  const list=$('#purchaseList');list.innerHTML='';$('#consultEmpty').classList.toggle('hidden',rows.length>0);$('#consultCount').textContent=`${rows.length} ${rows.length===1?'registro':'registros'}`;
+  rows.slice().reverse().forEach(x=>{
+    const el=document.createElement('article');el.className='purchase-row';
+    el.innerHTML=`<div class="purchase-thumb"><img src="producto-a255.png" alt="${x.product.code}"></div><div class="purchase-main"><div class="purchase-top"><strong>${x.purchase}</strong><span class="purchase-brand">${x.product.brand}</span>${x.edit?'<span class="edited-tag">⚠ Editada</span>':''}</div><h3>${x.product.code}</h3><p>${formatDateEs(x.date)} · ${x.pairs} pares · Tallas ${sizesText(x.sizes)}</p><p>Total S/ ${(x.pairs*x.price).toFixed(2)}</p></div><button class="secondary-btn purchase-view">Ver detalle →</button>`;
+    el.querySelector('.purchase-view').onclick=()=>openPurchaseDetail(x);list.appendChild(el);
+  });
+}
+function openPurchaseDetail(x){
+  state.detailPurchase=x;$('#detailSubtitle').textContent=`${x.purchase} · ${formatDateEs(x.date)}`;$('#detailProductCode').textContent=x.product.code;$('#detailProductInfo').textContent=`${x.product.category} · ${x.product.material||'Cuero'} · ${x.product.color}`;$('#detailUnitPrice').textContent=`S/ ${x.price.toFixed(2)}`;$('#detailBrand').textContent=x.product.brand;$('#detailSizes').textContent=sizesText(x.sizes);$('#detailPairs').textContent=x.pairs;$('#detailMoney').textContent=`S/ ${(x.pairs*x.price).toFixed(2)}`;$('#detailPurchase').textContent=x.purchase;$('#detailDate').textContent=formatDateEs(x.date);$('#detailNotes').textContent=x.notes||'Sin observaciones.';
+  const hist=$('#editHistory');hist.classList.toggle('hidden',!x.edit);if(x.edit)$('#editHistoryText').textContent=`Original: ${x.edit.originalSizes} · ${x.edit.originalPairs} pares · S/ ${x.edit.originalPrice.toFixed(2)}. Actual: ${sizesText(x.sizes)} · ${x.pairs} pares · S/ ${x.price.toFixed(2)}. Motivo: ${x.edit.reason}`;
+  show('screen-purchase-detail');
+}
+function buildEditSizes(x){
+  buildSizes('#sizesEdit',x.product.category,'editTotalPairs');
+  [...$('#sizesEdit').querySelectorAll('.size-control')].forEach(box=>{const size=box.querySelector('strong').textContent;const found=x.sizes.find(s=>String(s.size)===String(size));box.querySelector('span').textContent=found?found.qty:0});updateTotal('#sizesEdit','editTotalPairs');
+}
+function openEdit(){const x=state.detailPurchase;if(!x)return;$('#editProductCode').textContent=x.product.code;$('#editProductName').textContent=`${x.product.brand} · ${x.product.category} · ${x.product.color}`;$('#editPurchaseCode').textContent=x.purchase;$('#editDate').value=x.date;$('#editPrice').value=x.price;$('#editNotes').value=x.notes||'';$('#editReason').value='';buildEditSizes(x);show('screen-edit-purchase')}
+function saveEdit(){const x=state.detailPurchase;if(!x)return;const reason=$('#editReason').value.trim();if(!reason){toast('Indica el motivo de la corrección.');return}const newSizes=readSizes('#sizesEdit'),pairs=newSizes.reduce((a,s)=>a+s.qty,0),price=Number($('#editPrice').value);if(!pairs){toast('Debe quedar al menos un par.');return}if(!Number.isFinite(price)||price<0){toast('Ingresa un precio válido.');return}if(!x.edit)x.edit={originalSizes:sizesText(x.sizes),originalPairs:x.pairs,originalPrice:x.price,reason};else x.edit.reason=reason;x.sizes=newSizes;x.pairs=pairs;x.price=price;x.date=$('#editDate').value;x.notes=$('#editNotes').value.trim();toast('Corrección guardada.');openPurchaseDetail(x)}
+
+$('#btnRunConsult').onclick=renderPurchases;$('#btnClearConsult').onclick=()=>{$('#consultDate').value='';$('#consultBrand').value='';$('#consultProductCode').value='';$('#consultPurchaseCode').value='';renderPurchases()};$('#btnEditPurchase').onclick=openEdit;$('#btnSaveEdit').onclick=saveEdit;
+
+// Conecta la consulta desde la pantalla de confirmación.
+$('#btnConsult').onclick=()=>{renderPurchases();show('screen-consult')};
+
+// Extiende Volver para las pantallas de consulta.
+const originalBack=$('#btnBack').onclick;
+$('#btnBack').onclick=()=>{
+  const extra={'screen-consult':'screen-home','screen-purchase-detail':'screen-consult','screen-edit-purchase':'screen-purchase-detail'};
+  if(extra[state.screen]){show(extra[state.screen]);return}
+  originalBack();
+};
+
+renderPurchases();

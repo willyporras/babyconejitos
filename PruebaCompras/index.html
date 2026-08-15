@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#061b35">
   <title>Proto Compras</title>
-  <link rel="stylesheet" href="estilos.css?v=7">
+  <link rel="stylesheet" href="estilos.css?v=8">
 </head>
 <body>
   <header class="topbar">
     <button class="icon-btn" id="btnBack" aria-label="Volver">←</button>
     <div class="brand">
       <span class="brand-icon">♧</span>
-      <span>Registrar Compra</span>
+      <span id="headerTitle">Compras</span>
     </div>
     <button class="icon-btn" aria-label="Ayuda">?</button>
   </header>
@@ -27,8 +27,11 @@
       <div class="home-card">
         <div class="menu-icon">🛒</div>
         <h2>Compras</h2>
-        <p>Registra las compras realizadas y actualiza tu stock.</p>
-        <button class="primary-btn" data-go="screen-identify">Entrar a Compras <span>→</span></button>
+        <p>Registra las compras realizadas o consulta registros anteriores.</p>
+        <div class="home-actions">
+          <button class="primary-btn" data-go="screen-identify">＋ Registrar compra</button>
+          <button class="secondary-btn" data-go="screen-consult">☷ Consultar compras</button>
+        </div>
       </div>
     </section>
 
@@ -185,9 +188,54 @@
       <div class="info-box">ⓘ <div><strong>Importante</strong><p>Cada compra se registró y el stock fue actualizado inmediatamente. Las compras podrán consultarse y editarse en el módulo correspondiente.</p></div></div>
       <div class="actions-row"><button class="primary-btn" id="btnFinish">✓ Finalizar y salir</button><button class="secondary-btn" id="btnContinueFromSummary">＋ Registrar nueva compra</button><button class="secondary-btn" id="btnConsult">☷ Consultar compras registradas</button></div>
     </section>
+
+    <section class="screen" id="screen-consult">
+      <div class="page-title compact"><span class="section-icon">☷</span><div><h1>Consultar compras</h1><p>Busca compras registradas por fecha, marca, código o número de compra.</p></div></div>
+      <div class="form-card consult-filters">
+        <div class="consult-grid">
+          <div><label for="consultDate">Fecha</label><input id="consultDate" type="date"></div>
+          <div><label for="consultBrand">Marca</label><select id="consultBrand"><option value="">Todas las marcas</option><option>Kelly</option><option>Ericka</option><option>Brakedi</option></select></div>
+          <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A255"></div>
+          <div><label for="consultPurchaseCode">N.º de compra</label><input id="consultPurchaseCode" placeholder="Ej. CP-0014"></div>
+        </div>
+        <div class="consult-actions"><button class="primary-btn" id="btnRunConsult">🔎 Buscar compras</button><button class="secondary-btn" id="btnClearConsult">Limpiar filtros</button></div>
+      </div>
+      <div class="consult-results-head"><div><h2>Compras encontradas</h2><p id="consultCount">3 registros ficticios</p></div></div>
+      <div class="purchase-list" id="purchaseList"></div>
+      <div class="empty-state hidden" id="consultEmpty"><div>🔍</div><h3>No encontramos compras</h3><p>Prueba con otros filtros.</p></div>
+    </section>
+
+    <section class="screen" id="screen-purchase-detail">
+      <div class="page-title compact"><span class="section-icon">🧾</span><div><h1>Detalle de compra</h1><p id="detailSubtitle">CP-0014 · 15/08/2026</p></div></div>
+      <div class="product-result-layout detail-layout">
+        <div class="product-result-card product-result-photo"><img id="detailImage" src="producto-a255.png" alt="Producto"><div class="product-result-code" id="detailProductCode">A076</div><p id="detailProductInfo">Pibe Niño · Cuero · Azul</p><small>Precio unitario: <strong id="detailUnitPrice">S/ 20.00</strong></small></div>
+        <div class="summary-card summary-brand"><span>🏷️</span><small>Marca</small><strong id="detailBrand">Kelly</strong></div>
+        <div class="summary-card summary-sizes"><span>📏</span><small>Tallas</small><strong id="detailSizes">19, 20, 21</strong></div>
+        <div class="summary-card summary-pairs"><span>👟</span><small>Total de pares</small><strong id="detailPairs">3</strong></div>
+        <div class="summary-card summary-money"><span>💰</span><small>Total invertido</small><strong id="detailMoney">S/ 60.00</strong></div>
+      </div>
+      <div class="detail-meta"><div><small>N.º de compra</small><strong id="detailPurchase">CP-0014</strong></div><div><small>Fecha</small><strong id="detailDate">15/08/2026</strong></div></div>
+      <div class="notes-card"><small>Observaciones</small><p id="detailNotes">Sin observaciones.</p></div>
+      <div class="edit-history hidden" id="editHistory"><strong>⚠ Compra modificada</strong><p id="editHistoryText"></p></div>
+      <div class="actions-row detail-actions"><button class="primary-btn" id="btnEditPurchase">✎ Editar compra</button><button class="secondary-btn" data-go="screen-consult">← Volver a resultados</button></div>
+    </section>
+
+    <section class="screen" id="screen-edit-purchase">
+      <div class="page-title compact"><span class="section-icon">✎</span><div><h1>Editar compra</h1><p id="editSubtitle">Corrige los datos y deja constancia del motivo.</p></div></div>
+      <div class="product-header"><div class="product-photo large">👟</div><div><span class="eyebrow">Compra registrada</span><h1 id="editProductCode">A076</h1><p id="editProductName">Kelly · Pibe Niño · Azul</p></div></div>
+      <div class="form-card">
+        <div class="two-col"><div><label>N.º de compra</label><div class="readonly" id="editPurchaseCode">CP-0014</div></div><div><label for="editDate">Fecha</label><input id="editDate" type="date"></div></div>
+        <label>Tallas y cantidades</label><div class="sizes" id="sizesEdit"></div><div class="total-row"><span>Total de pares</span><strong id="editTotalPairs">0</strong></div>
+        <label for="editPrice">Precio unitario</label><div class="money-input"><span>S/</span><input id="editPrice" type="number" min="0" step="0.01"></div>
+        <label for="editNotes">Observaciones de compra <span>(opcional)</span></label><textarea id="editNotes" rows="2"></textarea>
+        <label for="editReason">Motivo de la corrección</label><textarea id="editReason" rows="3" placeholder="Ej. Error al momento de contar"></textarea>
+        <div class="info-box">ⓘ <div><strong>La información original no se elimina</strong><p>Este prototipo conservará el valor anterior y mostrará la corrección en el historial de la compra.</p></div></div>
+        <button class="primary-btn full" id="btnSaveEdit">✓ Guardar corrección</button>
+      </div>
+    </section>
   </main>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
