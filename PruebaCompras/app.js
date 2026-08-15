@@ -102,7 +102,11 @@ function buildSizes(selector,category,totalId){
   });
 }
 function readSizes(selector){return [...$(selector).querySelectorAll('.size-control')].map(b=>({size:b.querySelector('strong').textContent,qty:Number(b.querySelector('span').textContent)})).filter(x=>x.qty>0)}
-function updateTotal(selector,id){$(id).textContent=readSizes(selector).reduce((a,x)=>a+x.qty,0)}
+function updateTotal(selector,id){
+  const target = String(id).startsWith('#') ? $(id) : document.getElementById(id);
+  if(!target) return;
+  target.textContent=readSizes(selector).reduce((a,x)=>a+x.qty,0);
+}
 
 function addPurchase(product,selector,price,date,notes){
   const sizes=readSizes(selector), pairs=sizes.reduce((a,x)=>a+x.qty,0);
