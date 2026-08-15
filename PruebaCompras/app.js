@@ -2,9 +2,9 @@ const state = {
   screen: 'screen-home',
   brands: ['Kelly','Ericka','Brakedi','Pibe Shoes'],
   products: [
-    {code:'A076',brand:'Kelly',category:'Pibe Niño',color:'Azul',material:'Cuero'},
-    {code:'A255',brand:'Kelly',category:'Pibe Niño',color:'Azul',material:'Cuero'},
-    {code:'A291',brand:'Kelly',category:'Pibe Niño',color:'Marrón',material:'Cuero'},
+    {code:'A076',brand:'Kelly',category:'Pibe Niño',color:'Azul'},
+    {code:'A255',brand:'Kelly',category:'Pibe Niño',color:'Azul'},
+    {code:'A291',brand:'Kelly',category:'Pibe Niño',color:'Marrón'},
     {code:'A123',brand:'Ericka',category:'Pibe Niña',color:'Rosado'},
     {code:'A028',brand:'Ericka',category:'Pibe Niña',color:'Rosado'},
     {code:'A350',brand:'Ericka',category:'Pibe Niña',color:'Blanco'},
@@ -120,22 +120,12 @@ function openNewProduct(){
 }
 
 function finishSummary(){
-  const item=state.session.at(-1);
-  if(!item){return}
-  const product=item.product;
-  const material=product.material||'Cuero';
-  const sizeText=item.sizes.map(s=>s.qty>1?`${s.size} (${s.qty})`:s.size).join(', ')||'—';
-  const totalMoney=item.pairs*item.price;
-
-  $('#summaryBrand').textContent=product.brand||'—';
-  $('#summarySizes').textContent=sizeText;
-  $('#summaryPairs').textContent=item.pairs;
-  $('#summaryMoney').textContent=`S/ ${totalMoney.toFixed(2)}`;
-  $('#summaryCode').textContent=product.code||'—';
-  $('#summaryProductInfo').textContent=`${product.category||'—'} · ${material} · ${product.color||'—'}`;
-  $('#summaryUnitPrice').textContent=`S/ ${item.price.toFixed(2)}`;
-  $('#summaryProductImage').src='producto-a255.png';
-  $('#summaryProductImage').alt=`Imagen del producto ${product.code||''}`;
+  const products=state.session.length,pairs=state.session.reduce((a,x)=>a+x.pairs,0),money=state.session.reduce((a,x)=>a+x.pairs*x.price,0);
+  $('#sessionProducts').textContent=`${products} productos · ${pairs} pares`;
+  $('#summaryProducts').textContent=products;$('#summaryPairs').textContent=pairs;$('#summaryMoney').textContent=`S/ ${money.toFixed(2)}`;$('#summaryPurchases').textContent=products;
+  const byBrand={};state.session.forEach(x=>{const b=x.product.brand;byBrand[b]??={products:0,pairs:0,total:0};byBrand[b].products++;byBrand[b].pairs+=x.pairs;byBrand[b].total+=x.pairs*x.price});
+  $('#brandSummary').innerHTML=Object.entries(byBrand).map(([b,v])=>`<div class="brand-box"><div><strong>${b}</strong><small>${v.products} productos · ${v.pairs} pares</small></div><span class="brand-total">S/ ${v.total.toFixed(2)}</span></div>`).join('');
+  $('#summaryTable').innerHTML=state.session.map(x=>`<tr><td><strong>${x.purchase}</strong><br><small>${x.date}</small></td><td><strong>${x.product.code}</strong><br><small>${x.product.category} · ${x.product.color}</small></td><td>${x.product.brand}</td><td>${x.sizes.map(s=>`${s.size}:${s.qty}`).join(' · ')}</td><td>${x.pairs}</td><td>S/ ${x.price.toFixed(2)}</td><td>S/ ${(x.pairs*x.price).toFixed(2)}</td></tr>`).join('');
   show('screen-success');
 }
 
