@@ -109,8 +109,9 @@ function addPurchase(product,selector,price,date,notes){
   if(!pairs){toast('Ingresa al menos una cantidad.');return false}
   if(price===''||Number(price)<0){toast('Ingresa el precio de compra.');return false}
   const cp=`CP-${String(state.nextPurchase).padStart(4,'0')}`;state.nextPurchase++;
-  state.session.push({purchase:cp,date,product, sizes,pairs,price:Number(price),notes});
-  toast(`${cp} registrado correctamente`);return true;
+  const record={purchase:cp,date,product, sizes,pairs,price:Number(price),notes};
+  state.session.push(record);
+  toast(`${cp} registrado correctamente`);return record;
 }
 
 function openNewProduct(){
@@ -119,13 +120,16 @@ function openNewProduct(){
   buildSizes('#sizesNew',f.category||'Pibe Niño','totalNewPairs');$('#newPrice').value='';$('#newNotes').value='';show('screen-new');
 }
 
-function finishSummary(){
-  const products=state.session.length,pairs=state.session.reduce((a,x)=>a+x.pairs,0),money=state.session.reduce((a,x)=>a+x.pairs*x.price,0);
-  $('#sessionProducts').textContent=`${products} productos · ${pairs} pares`;
-  $('#summaryProducts').textContent=products;$('#summaryPairs').textContent=pairs;$('#summaryMoney').textContent=`S/ ${money.toFixed(2)}`;$('#summaryPurchases').textContent=products;
-  const byBrand={};state.session.forEach(x=>{const b=x.product.brand;byBrand[b]??={products:0,pairs:0,total:0};byBrand[b].products++;byBrand[b].pairs+=x.pairs;byBrand[b].total+=x.pairs*x.price});
-  $('#brandSummary').innerHTML=Object.entries(byBrand).map(([b,v])=>`<div class="brand-box"><div><strong>${b}</strong><small>${v.products} productos · ${v.pairs} pares</small></div><span class="brand-total">S/ ${v.total.toFixed(2)}</span></div>`).join('');
-  $('#summaryTable').innerHTML=state.session.map(x=>`<tr><td><strong>${x.purchase}</strong><br><small>${x.date}</small></td><td><strong>${x.product.code}</strong><br><small>${x.product.category} · ${x.product.color}</small></td><td>${x.product.brand}</td><td>${x.sizes.map(s=>`${s.size}:${s.qty}`).join(' · ')}</td><td>${x.pairs}</td><td>S/ ${x.price.toFixed(2)}</td><td>S/ ${(x.pairs*x.price).toFixed(2)}</td></tr>`).join('');
+function formatSummarySizes(sizes){
+  return sizes.map(s=>s.qty>1?`${s.size} (${s.qty})`:s.size).join(', ');
+}
+
+function finishSummary(record){
+  if(!record){return}
+  $('#summaryBrand').textContent=record.product.brand||'—';
+  $('#summarySizes').textContent=formatSummarySizes(record.sizes)||'—';
+  $('#summaryPairs').textContent=record.pairs;
+  $('#summaryMoney').textContent=`S/ ${(record.pairs*record.price).toFixed(2)}`;
   show('screen-success');
 }
 
@@ -139,8 +143,8 @@ $('#categorySelect').addEventListener('change',()=>{updateColors();state.filters
 document.addEventListener('click',e=>{if(!e.target.closest('.autocomplete'))$('#brandSuggestions').innerHTML=''});
 $('#btnSearch').onclick=()=>{currentFilters();if(!state.filters.brand||!state.filters.category){toast('Selecciona marca y categoría para buscar.');return}renderGallery();show('screen-gallery')};
 $('#btnNewProduct').onclick=openNewProduct;
-$('#btnRegisterExisting').onclick=()=>{if(!state.selected)return;const ok=addPurchase(state.selected,'#sizesExisting',$('#priceInput').value,$('#purchaseDate').value,$('#notesInput').value);if(ok)finishSummary();};
-$('#btnRegisterNew').onclick=()=>{const p={code:$('#newCode').textContent,brand:$('#newBrand').textContent,category:$('#newCategory').textContent,color:$('#newColor').textContent};const ok=addPurchase(p,'#sizesNew',$('#newPrice').value,today,$('#newNotes').value);if(ok){state.products.push(p);finishSummary();}};
+$('#btnRegisterExisting').onclick=()=>{if(!state.selected)return;const record=addPurchase(state.selected,'#sizesExisting',$('#priceInput').value,$('#purchaseDate').value,$('#notesInput').value);if(record)finishSummary(record);};
+$('#btnRegisterNew').onclick=()=>{const p={code:$('#newCode').textContent,brand:$('#newBrand').textContent,category:$('#newCategory').textContent,color:$('#newColor').textContent};const record=addPurchase(p,'#sizesNew',$('#newPrice').value,today,$('#newNotes').value);if(record){state.products.push(p);finishSummary(record);}};
 $('#btnFinish').onclick=()=>{state.session=[];show('screen-home');toast('Sesión finalizada.')};
 $('#btnContinueFromSummary').onclick=()=>{state.filters={brand:'',category:'',color:'',code:''};$('#brandInput').value='';$('#categorySelect').value='';updateColors();$('#codeInput').value='';show('screen-identify')};
 $('#btnConsult').onclick=()=>toast('En este prototipo, Consultar Compras aún no está conectado.');
