@@ -119,3 +119,45 @@
     font-size: 11px !important;
   }
 }
+
+/* Ajuste Pantalla 5: icono alineado a la izquierda de Marca/Tallas */
+.product-result-layout > .summary-brand,
+.product-result-layout > .summary-sizes {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  column-gap: 12px !important;
+  row-gap: 3px !important;
+  align-content: center !important;
+  align-items: center !important;
+}
+.product-result-layout > .summary-brand > span,
+.product-result-layout > .summary-sizes > span {
+  grid-column: 1 !important;
+  grid-row: 1 / span 2 !important;
+  align-self: center !important;
+  justify-self: center !important;
+  margin: 0 !important;
+}
+.product-result-layout > .summary-brand > small,
+.product-result-layout > .summary-sizes > small {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  align-self: end !important;
+  margin: 0 !important;
+}
+.product-result-layout > .summary-brand > strong,
+.product-result-layout > .summary-sizes > strong {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .product-result-layout > .summary-brand,
+  .product-result-layout > .summary-sizes {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    column-gap: 8px !important;
+  }
+}
