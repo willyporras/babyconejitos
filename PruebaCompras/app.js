@@ -2,9 +2,9 @@ const state = {
   screen: 'screen-home',
   brands: ['Kelly','Ericka','Brakedi','Pibe Shoes'],
   products: [
-    {code:'A076',brand:'Kelly',category:'Pibe Niño',color:'Azul'},
-    {code:'A255',brand:'Kelly',category:'Pibe Niño',color:'Azul'},
-    {code:'A291',brand:'Kelly',category:'Pibe Niño',color:'Marrón'},
+    {code:'A076',brand:'Kelly',category:'Pibe Niño',color:'Azul',material:'Cuero'},
+    {code:'A255',brand:'Kelly',category:'Pibe Niño',color:'Azul',material:'Cuero'},
+    {code:'A291',brand:'Kelly',category:'Pibe Niño',color:'Marrón',material:'Cuero'},
     {code:'A123',brand:'Ericka',category:'Pibe Niña',color:'Rosado'},
     {code:'A028',brand:'Ericka',category:'Pibe Niña',color:'Rosado'},
     {code:'A350',brand:'Ericka',category:'Pibe Niña',color:'Blanco'},
@@ -109,9 +109,8 @@ function addPurchase(product,selector,price,date,notes){
   if(!pairs){toast('Ingresa al menos una cantidad.');return false}
   if(price===''||Number(price)<0){toast('Ingresa el precio de compra.');return false}
   const cp=`CP-${String(state.nextPurchase).padStart(4,'0')}`;state.nextPurchase++;
-  const record={purchase:cp,date,product, sizes,pairs,price:Number(price),notes};
-  state.session.push(record);
-  toast(`${cp} registrado correctamente`);return record;
+  state.session.push({purchase:cp,date,product, sizes,pairs,price:Number(price),notes});
+  toast(`${cp} registrado correctamente`);return true;
 }
 
 function openNewProduct(){
@@ -120,16 +119,23 @@ function openNewProduct(){
   buildSizes('#sizesNew',f.category||'Pibe Niño','totalNewPairs');$('#newPrice').value='';$('#newNotes').value='';show('screen-new');
 }
 
-function formatSummarySizes(sizes){
-  return sizes.map(s=>s.qty>1?`${s.size} (${s.qty})`:s.size).join(', ');
-}
+function finishSummary(){
+  const item=state.session.at(-1);
+  if(!item){return}
+  const product=item.product;
+  const material=product.material||'Cuero';
+  const sizeText=item.sizes.map(s=>s.qty>1?`${s.size} (${s.qty})`:s.size).join(', ')||'—';
+  const totalMoney=item.pairs*item.price;
 
-function finishSummary(record){
-  if(!record){return}
-  $('#summaryBrand').textContent=record.product.brand||'—';
-  $('#summarySizes').textContent=formatSummarySizes(record.sizes)||'—';
-  $('#summaryPairs').textContent=record.pairs;
-  $('#summaryMoney').textContent=`S/ ${(record.pairs*record.price).toFixed(2)}`;
+  $('#summaryBrand').textContent=product.brand||'—';
+  $('#summarySizes').textContent=sizeText;
+  $('#summaryPairs').textContent=item.pairs;
+  $('#summaryMoney').textContent=`S/ ${totalMoney.toFixed(2)}`;
+  $('#summaryCode').textContent=product.code||'—';
+  $('#summaryProductInfo').textContent=`${product.category||'—'} · ${material} · ${product.color||'—'}`;
+  $('#summaryUnitPrice').textContent=`S/ ${item.price.toFixed(2)}`;
+  $('#summaryProductImage').src='producto-a255.png';
+  $('#summaryProductImage').alt=`Imagen del producto ${product.code||''}`;
   show('screen-success');
 }
 
@@ -143,8 +149,8 @@ $('#categorySelect').addEventListener('change',()=>{updateColors();state.filters
 document.addEventListener('click',e=>{if(!e.target.closest('.autocomplete'))$('#brandSuggestions').innerHTML=''});
 $('#btnSearch').onclick=()=>{currentFilters();if(!state.filters.brand||!state.filters.category){toast('Selecciona marca y categoría para buscar.');return}renderGallery();show('screen-gallery')};
 $('#btnNewProduct').onclick=openNewProduct;
-$('#btnRegisterExisting').onclick=()=>{if(!state.selected)return;const record=addPurchase(state.selected,'#sizesExisting',$('#priceInput').value,$('#purchaseDate').value,$('#notesInput').value);if(record)finishSummary(record);};
-$('#btnRegisterNew').onclick=()=>{const p={code:$('#newCode').textContent,brand:$('#newBrand').textContent,category:$('#newCategory').textContent,color:$('#newColor').textContent};const record=addPurchase(p,'#sizesNew',$('#newPrice').value,today,$('#newNotes').value);if(record){state.products.push(p);finishSummary(record);}};
+$('#btnRegisterExisting').onclick=()=>{if(!state.selected)return;const ok=addPurchase(state.selected,'#sizesExisting',$('#priceInput').value,$('#purchaseDate').value,$('#notesInput').value);if(ok)finishSummary();};
+$('#btnRegisterNew').onclick=()=>{const p={code:$('#newCode').textContent,brand:$('#newBrand').textContent,category:$('#newCategory').textContent,color:$('#newColor').textContent};const ok=addPurchase(p,'#sizesNew',$('#newPrice').value,today,$('#newNotes').value);if(ok){state.products.push(p);finishSummary();}};
 $('#btnFinish').onclick=()=>{state.session=[];show('screen-home');toast('Sesión finalizada.')};
 $('#btnContinueFromSummary').onclick=()=>{state.filters={brand:'',category:'',color:'',code:''};$('#brandInput').value='';$('#categorySelect').value='';updateColors();$('#codeInput').value='';show('screen-identify')};
 $('#btnConsult').onclick=()=>toast('En este prototipo, Consultar Compras aún no está conectado.');

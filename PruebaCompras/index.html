@@ -166,13 +166,22 @@
         <div class="step done"><b>✓</b><span>Agregar más</span></div><div class="line done"></div>
         <div class="step current"><b>5</b><span>Resumen</span></div>
       </div>
-      <div class="success-banner"><div class="success-check">✓</div><div><h1>Registro completado</h1><p>Se registraron las compras de esta sesión y el stock fue actualizado.</p></div></div>
-      <div class="summary-grid product-summary-grid">
-        <div class="summary-card"><span>🏷️</span><small>Marca</small><strong id="summaryBrand">—</strong></div>
-        <div class="summary-card"><span>📏</span><small>Tallas</small><strong id="summarySizes">—</strong></div>
-        <div class="summary-card"><span>👟</span><small>Total de pares</small><strong id="summaryPairs">0</strong></div>
-        <div class="summary-card"><span>💰</span><small>Total invertido</small><strong id="summaryMoney">S/ 0.00</strong></div>
+      <div class="success-banner"><div class="success-check">✓</div><div><h1>Registro completado</h1><p>La compra o actualización del producto se registró correctamente.</p></div></div>
+
+      <div class="product-result-layout">
+        <div class="product-result-card product-result-photo">
+          <img id="summaryProductImage" src="producto-a255.png" alt="Imagen del producto A255">
+          <div class="product-result-code" id="summaryCode">A255</div>
+          <p id="summaryProductInfo">Pibe Niño · Cuero · Azul</p>
+          <small>Precio unitario: <strong id="summaryUnitPrice">S/ 20.00</strong></small>
+        </div>
+
+        <div class="summary-card summary-brand"><span>🏷️</span><small>Marca</small><strong id="summaryBrand">Kelly</strong></div>
+        <div class="summary-card summary-sizes"><span>📏</span><small>Tallas</small><strong id="summarySizes">19, 20 (3), 21 (2)</strong></div>
+        <div class="summary-card summary-pairs"><span>👟</span><small>Total de pares</small><strong id="summaryPairs">6</strong></div>
+        <div class="summary-card summary-money"><span>💰</span><small>Total invertido</small><strong id="summaryMoney">S/ 120.00</strong></div>
       </div>
+
       <div class="info-box">ⓘ <div><strong>Importante</strong><p>Cada compra se registró y el stock fue actualizado inmediatamente. Las compras podrán consultarse y editarse en el módulo correspondiente.</p></div></div>
       <div class="actions-row"><button class="primary-btn" id="btnFinish">✓ Finalizar y salir</button><button class="secondary-btn" id="btnContinueFromSummary">＋ Registrar nueva compra</button><button class="secondary-btn" id="btnConsult">☷ Consultar compras registradas</button></div>
     </section>
