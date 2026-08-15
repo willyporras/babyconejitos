@@ -198,7 +198,7 @@
           <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A255"></div>
           <div><label for="consultPurchaseCode">N.º de compra</label><input id="consultPurchaseCode" placeholder="Ej. CP-0014"></div>
         </div>
-        <div class="consult-actions"><button class="primary-btn" id="btnRunConsult">🔎 Buscar</button><button class="secondary-btn" id="btnClearConsult">Limpiar filtros</button></div>
+        <div class="consult-actions"><button class="primary-btn" id="btnRunConsult">🔎 Buscar compras</button><button class="secondary-btn" id="btnClearConsult">Limpiar filtros</button></div>
       </div>
       <div class="consult-results-head"><div><h2>Compras encontradas</h2><p id="consultCount">3 registros ficticios</p></div></div>
       <div class="purchase-list" id="purchaseList"></div>
@@ -219,26 +219,41 @@
       </div>
       <div class="detail-meta"><div><small>N.º de compra</small><strong id="detailPurchase">CP-0014</strong></div><div><small>Fecha</small><strong id="detailDate">15/08/2026</strong></div></div>
       <div class="notes-card"><small>Observaciones</small><p id="detailNotes">Sin observaciones.</p></div>
-      <div class="edit-history hidden" id="editHistory"><strong>⚠ Compra modificada</strong><p id="editHistoryText"></p></div>
+      <div class="edit-history hidden" id="editHistory"><div class="history-head"><div><strong>⚠ Compra modificada</strong><p id="editHistoryText"></p></div><button class="secondary-btn compact-btn" id="btnToggleHistory">Ver historial de cambios</button></div><div class="history-list hidden" id="historyList"></div></div>
       <div class="actions-row detail-actions"><button class="primary-btn" id="btnEditPurchase">✎ Editar compra</button><button class="secondary-btn" data-go="screen-consult">← Volver a resultados</button></div>
     </section>
 
     <section class="screen" id="screen-edit-purchase">
       <div class="page-title compact"><span class="section-icon">✎</span><div><h1>Editar compra</h1><p id="editSubtitle">Corrige los datos y deja constancia del motivo.</p></div></div>
       <div class="product-header"><div class="product-photo large">👟</div><div><span class="eyebrow">Compra registrada</span><h1 id="editProductCode">A076</h1><p id="editProductName">Kelly · Pibe Niño · Azul</p></div></div>
+
+      <div class="original-card">
+        <div class="original-card-head"><div><span class="eyebrow">Referencia</span><h2>Datos antes de editar</h2></div><span class="original-badge">Original / actual</span></div>
+        <div class="original-grid">
+          <div><small>Fecha</small><strong id="originalDate">15/08/2026</strong></div>
+          <div><small>Tallas</small><strong id="originalSizes">19, 20, 21</strong></div>
+          <div><small>Total de pares</small><strong id="originalPairs">3</strong></div>
+          <div><small>Precio unitario</small><strong id="originalPrice">S/ 20.00</strong></div>
+          <div><small>Total</small><strong id="originalTotal">S/ 60.00</strong></div>
+          <div><small>Observaciones</small><strong id="originalNotes">Sin observaciones.</strong></div>
+        </div>
+      </div>
+
       <div class="form-card">
+        <h2 class="edit-section-title">Nueva información</h2>
         <div class="two-col"><div><label>N.º de compra</label><div class="readonly" id="editPurchaseCode">CP-0014</div></div><div><label for="editDate">Fecha</label><input id="editDate" type="date"></div></div>
         <label>Tallas y cantidades</label><div class="sizes" id="sizesEdit"></div><div class="total-row"><span>Total de pares</span><strong id="editTotalPairs">0</strong></div>
         <label for="editPrice">Precio unitario</label><div class="money-input"><span>S/</span><input id="editPrice" type="number" min="0" step="0.01"></div>
         <label for="editNotes">Observaciones de compra <span>(opcional)</span></label><textarea id="editNotes" rows="2"></textarea>
         <label for="editReason">Motivo de la corrección</label><textarea id="editReason" rows="3" placeholder="Ej. Error al momento de contar"></textarea>
-        <div class="info-box">ⓘ <div><strong>La información original no se elimina</strong><p>Este prototipo conservará el valor anterior y mostrará la corrección en el historial de la compra.</p></div></div>
-        <button class="primary-btn full" id="btnSaveEdit">✓ Guardar corrección</button>
+        <small class="field-help">El motivo será obligatorio únicamente cuando hayas realizado algún cambio.</small>
+        <div class="info-box">ⓘ <div><strong>La información original no se elimina</strong><p>Cada corrección se añadirá al historial de esta compra. Si vuelves a editarla, las correcciones anteriores permanecerán visibles.</p></div></div>
+        <div class="edit-actions"><button class="primary-btn" id="btnSaveEdit">✓ Guardar corrección</button><button class="secondary-btn" id="btnCancelEdit">Cancelar</button></div>
       </div>
     </section>
   </main>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
