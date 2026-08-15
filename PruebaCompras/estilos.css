@@ -161,3 +161,49 @@
     column-gap: 8px !important;
   }
 }
+
+/* Pantalla 5: compactar solo la tarjeta del producto */
+.product-result-layout {
+  grid-template-rows: minmax(105px, auto) minmax(105px, auto) auto !important;
+}
+.product-result-layout > .product-result-photo {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  justify-content: center !important;
+}
+.product-result-photo img {
+  width: auto !important;
+  height: 145px !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+}
+.product-result-code {
+  margin-top: 0 !important;
+  line-height: 1.1 !important;
+}
+.product-result-photo p {
+  margin: 2px 0 4px !important;
+}
+
+@media (max-width: 600px) {
+  .product-result-layout {
+    grid-template-rows: minmax(108px, auto) minmax(108px, auto) auto !important;
+  }
+  .product-result-layout > .product-result-photo {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  .product-result-photo img {
+    width: auto !important;
+    height: 118px !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+  }
+  .product-result-code {
+    margin-top: 0 !important;
+    line-height: 1.05 !important;
+  }
+  .product-result-photo p {
+    margin: 2px 0 3px !important;
+  }
+}
