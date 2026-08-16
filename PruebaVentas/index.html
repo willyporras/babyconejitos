@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061b35">
+  <title>Proto Ventas</title>
+  <link rel="stylesheet" href="estilos.css?v=ventas1">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="btnBack" aria-label="Volver">←</button>
+    <div class="brand"><span class="brand-icon">♧</span><span id="headerTitle">Ventas</span></div>
+    <button class="icon-btn" id="btnHelp" aria-label="Ayuda">?</button>
+  </header>
+
+  <main>
+    <section class="screen active" id="screen-home">
+      <div class="hero home-hero">
+        <div class="hero-icon">💰</div>
+        <h1>Ventas</h1>
+        <p>¿Qué deseas hacer?</p>
+      </div>
+      <div class="home-card">
+        <div class="menu-icon">🧾</div>
+        <h2>Gestión de ventas</h2>
+        <p>Registra un par vendido o consulta las ventas guardadas.</p>
+        <div class="home-actions">
+          <button class="primary-btn" data-go="screen-identify">＋ Registrar venta</button>
+          <button class="secondary-btn" id="btnConsultPlaceholder">☷ Consultar ventas</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-identify">
+      <div class="stepper">
+        <div class="step current"><b>1</b><span>Identificar</span></div><div class="line"></div>
+        <div class="step"><b>2</b><span>Confirmar</span></div><div class="line"></div>
+        <div class="step"><b>3</b><span>Registrar</span></div><div class="line"></div>
+        <div class="step"><b>4</b><span>Listo</span></div>
+      </div>
+
+      <div class="page-title">
+        <span class="section-icon">🔎</span>
+        <div><h1>Identificar producto</h1><p>Usa toda la información que tengas disponible.</p></div>
+      </div>
+
+      <div class="priority-box">
+        <strong>El código tiene prioridad</strong>
+        <p>Si escribes un código, la búsqueda usará ese dato antes que los demás filtros y te mostrará la foto para confirmarlo.</p>
+      </div>
+
+      <div class="form-card">
+        <label for="codeInput">Código <span>(opcional)</span></label>
+        <input id="codeInput" type="text" placeholder="Ej. 235, A178, ZN044" autocomplete="off">
+
+        <div class="divider"><span>o identifica por características</span></div>
+
+        <label for="categorySelect">Categoría <span>(opcional)</span></label>
+        <select id="categorySelect"><option value="">Todas las categorías</option></select>
+
+        <label for="typeSelect">Tipo <span>(opcional)</span></label>
+        <select id="typeSelect"><option value="">Todos los tipos</option></select>
+
+        <label for="colorSelect">Color <span>(opcional)</span></label>
+        <select id="colorSelect"><option value="">Todos los colores</option></select>
+
+        <label for="sizeSelect">Talla <span>(opcional)</span></label>
+        <select id="sizeSelect"><option value="">Todas las tallas</option></select>
+
+        <button class="primary-btn full" id="btnSearch">Buscar productos <span>→</span></button>
+        <button class="text-btn full" id="btnClearFilters">Limpiar filtros</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-gallery">
+      <div class="stepper">
+        <div class="step done"><b>✓</b><span>Identificar</span></div><div class="line done"></div>
+        <div class="step current"><b>2</b><span>Confirmar</span></div><div class="line"></div>
+        <div class="step"><b>3</b><span>Registrar</span></div><div class="line"></div>
+        <div class="step"><b>4</b><span>Listo</span></div>
+      </div>
+
+      <div class="page-title compact">
+        <span class="section-icon">📷</span>
+        <div><h1>Confirma el producto</h1><p id="searchSummary">Resultados según los datos ingresados.</p></div>
+      </div>
+      <div class="filter-chips" id="activeFilters"></div>
+      <div class="result-count"><strong id="resultCount">0</strong><span>coincidencias</span></div>
+      <div class="gallery" id="gallery"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <div>🔍</div><h3>No encontramos productos</h3>
+        <p>Prueba quitando algún filtro o vuelve y añade otra característica.</p>
+      </div>
+      <button class="secondary-btn full" id="btnModifySearch">← Modificar búsqueda</button>
+    </section>
+
+    <section class="screen" id="screen-register">
+      <div class="stepper">
+        <div class="step done"><b>✓</b><span>Identificar</span></div><div class="line done"></div>
+        <div class="step done"><b>✓</b><span>Confirmar</span></div><div class="line done"></div>
+        <div class="step current"><b>3</b><span>Registrar</span></div><div class="line"></div>
+        <div class="step"><b>4</b><span>Listo</span></div>
+      </div>
+
+      <div class="product-header">
+        <div class="product-photo large"><img id="registerImage" src="producto-demo.png" alt="Producto seleccionado"></div>
+        <div><span class="eyebrow">Producto confirmado</span><h1 id="registerCode">235</h1><p id="registerName">Kelly · Pibe Niño · Azul</p></div>
+      </div>
+
+      <div class="form-card">
+        <div class="two-col">
+          <div><label>ID Venta</label><div class="readonly accent" id="saleId">V-0001</div></div>
+          <div><label for="saleDate">Fecha</label><input id="saleDate" type="date"></div>
+        </div>
+
+        <label for="saleSize">Talla vendida</label>
+        <select id="saleSize"></select>
+
+        <label for="salePrice">Precio de venta</label>
+        <div class="money-input"><span>S/</span><input id="salePrice" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <small>Ingresa el precio real cobrado, incluyendo cualquier rebaja realizada.</small>
+
+        <label for="saleNotes">Observaciones <span>(opcional)</span></label>
+        <textarea id="saleNotes" rows="3" placeholder="Ej. precio rebajado, venta reconstruida, detalle de identificación..."></textarea>
+
+        <div class="info-box">ⓘ <div><strong>Prototipo</strong><p>En la versión conectada, registrar una venta descontará el par vendido del stock correspondiente.</p></div></div>
+        <button class="primary-btn full" id="btnRegisterSale">✓ Registrar venta</button>
+        <button class="secondary-btn full" id="btnChangeProduct">Cambiar producto</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-success">
+      <div class="stepper">
+        <div class="step done"><b>✓</b><span>Identificar</span></div><div class="line done"></div>
+        <div class="step done"><b>✓</b><span>Confirmar</span></div><div class="line done"></div>
+        <div class="step done"><b>✓</b><span>Registrar</span></div><div class="line done"></div>
+        <div class="step current"><b>4</b><span>Listo</span></div>
+      </div>
+
+      <div class="success-banner"><div class="success-check">✓</div><div><h1>Venta registrada</h1><p>El par vendido quedó registrado correctamente.</p></div></div>
+
+      <div class="sale-result-layout">
+        <div class="sale-product-card">
+          <img id="summaryImage" src="producto-demo.png" alt="Producto vendido">
+          <div class="sale-code" id="summaryCode">235</div>
+          <p id="summaryInfo">Kelly · Pibe Niño · SandaliaG · Azul</p>
+        </div>
+        <div class="summary-card"><span>🧾</span><small>ID Venta</small><strong id="summarySaleId">V-0001</strong></div>
+        <div class="summary-card"><span>📏</span><small>Talla</small><strong id="summarySize">20</strong></div>
+        <div class="summary-card"><span>📅</span><small>Fecha</small><strong id="summaryDate">15/08/2026</strong></div>
+        <div class="summary-card"><span>💰</span><small>Precio vendido</small><strong id="summaryPrice">S/ 45.00</strong></div>
+      </div>
+
+      <div class="info-box">ⓘ <div><strong>Importante</strong><p>Cada par vendido genera su propio ID de venta, incluso si se vende el mismo modelo y talla más de una vez.</p></div></div>
+
+      <div class="success-actions">
+        <button class="primary-btn full" id="btnAnotherSale">＋ Registrar otra venta</button>
+        <button class="secondary-btn full" id="btnFinish">Finalizar y salir</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js?v=ventas1"></script>
+</body>
+</html>
