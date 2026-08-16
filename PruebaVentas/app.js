@@ -11,8 +11,8 @@ const state = {
 };
 
 const products = [
-  {code:'235',brand:'Kelly',category:'PibeNiño',type:'SandaliaG',color:'Azul',sizes:[17,18,19,20,21,22]},
-  {code:'233',brand:'Ericka',category:'PibeNiño',type:'Cuero',color:'Olivo',sizes:[17,18,19,20,21,22]},
+  {code:'235',brand:'Kelly',category:'PibeNiño',type:'SandaliaG',color:'Azul',sizes:[17,18,19,20,21,22],stock:{17:0,18:1,19:1,20:1,21:1,22:0}},
+  {code:'233',brand:'Ericka',category:'PibeNiño',type:'Cuero',color:'Olivo',sizes:[17,18,19,20,21,22],stock:{17:0,18:1,19:1,20:1,21:1,22:0}},
   {code:'250',brand:'Brakedi',category:'PibeNiño',type:'Cuero',color:'Habano',sizes:[17,18,19,20,21,22]},
   {code:'252',brand:'Florence',category:'PibeNiño',type:'Sandalia',color:'Marron',sizes:[17,18,19,20,21,22]},
   {code:'A178',brand:'Kelly',category:'PibeNiña',type:'SandaliaG',color:'Rosado',sizes:[17,18,19,20,21,22]},
@@ -120,13 +120,22 @@ function registerSale(){
   toast('Venta registrada correctamente.');
 }
 
+function remainingSizesAfterSale(product, soldSize){
+  const stock=product.stock||Object.fromEntries(product.sizes.map(size=>[size,1]));
+  const remaining={...stock};
+  remaining[soldSize]=Math.max(0,(remaining[soldSize]||0)-1);
+  return Object.entries(remaining)
+    .filter(([,qty])=>qty>0)
+    .map(([size,qty])=>qty>1?`${size} (${qty})`:String(size));
+}
+
 function renderSuccess(s){
   $('#summaryCode').textContent=s.product.code;
   $('#summaryInfo').textContent=`${s.product.brand} · ${s.product.category} · ${s.product.type} · ${s.product.color}`;
-  $('#summarySaleId').textContent=s.id;
   $('#summarySize').textContent=s.size;
-  $('#summaryDate').textContent=formatDate(s.date);
   $('#summaryPrice').textContent=`S/ ${s.price.toFixed(2)}`;
+  const available=remainingSizesAfterSale(s.product,s.size);
+  $('#summaryAvailableSizes').textContent=available.length?available.join(', '):'Sin tallas disponibles';
 }
 
 function resetRegisterState(){state.selected=null;state.lastSale=null;clearFilters();$('#salePrice').value='';$('#saleNotes').value='';$('#saleDate').value=todayISO}
