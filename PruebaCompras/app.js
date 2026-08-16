@@ -247,11 +247,11 @@ function renderHistory(x){
   wrap.classList.toggle('hidden',history.length===0);
   list.innerHTML='';
   if(!history.length)return;
-  const last=history.at(-1);
-  $('#editHistoryText').textContent=`Última corrección: ${last.changes.join(' · ')}. Motivo: ${last.reason}`;
+  $('#editHistoryText').innerHTML=`Modificaciones:<br>${history.slice().reverse().map(h=>`• ${h.timestamp}`).join('<br>')}`;
   history.slice().reverse().forEach((h,idx)=>{
+    const number=history.length-idx;
     const el=document.createElement('div');el.className='history-entry';
-    el.innerHTML=`<div class="history-entry-head"><strong>Corrección ${history.length-idx}</strong><small>${h.timestamp}</small></div><ul>${h.changes.map(c=>`<li>${c}</li>`).join('')}</ul><div class="history-reason"><strong>Motivo:</strong> ${h.reason}</div>`;
+    el.innerHTML=`<div class="history-entry-head"><strong>Corrección ${number} realizada el ${h.timestamp}</strong></div><div class="history-changes">${h.changes.map(c=>`<div class="history-change">${c}</div>`).join('')}</div><div class="history-reason"><strong>Motivo:</strong> ${h.reason}</div>`;
     list.appendChild(el);
   });
 }
@@ -308,11 +308,11 @@ function saveEdit(){
   const before=state.editBaseline||snapshotPurchase(x);
   const after={date:$('#editDate').value,sizes:newSizes,pairs,price,notes:$('#editNotes').value.trim()};
   const changes=changeList(before,after);
-  if(!changes.length){toast('No se detectaron cambios.');return}
+  if(!changes.length){toast('No se detectaron cambios.');openPurchaseDetail(x);return}
   const reason=$('#editReason').value.trim();
   if(!reason){toast('Indica el motivo de la corrección.');return}
   if(!x.history)x.history=[];
-  const stamp=new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const stamp=new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   x.history.push({timestamp:stamp,reason,changes,before,after});
   x.sizes=after.sizes;x.pairs=after.pairs;x.price=after.price;x.date=after.date;x.notes=after.notes;
   toast('Corrección guardada.');
