@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#061b35">
   <title>Proto Ventas</title>
-  <link rel="stylesheet" href="estilos.css?v=ventas1">
+  <link rel="stylesheet" href="estilos.css?v=ventas3">
 </head>
 <body>
   <header class="topbar">
@@ -27,7 +27,7 @@
         <p>Registra un par vendido o consulta las ventas guardadas.</p>
         <div class="home-actions">
           <button class="primary-btn" data-go="screen-identify">＋ Registrar venta</button>
-          <button class="secondary-btn" id="btnConsultPlaceholder">☷ Consultar ventas</button>
+          <button class="secondary-btn" id="btnConsultSales">☷ Consultar ventas</button>
         </div>
       </div>
     </section>
@@ -162,9 +162,75 @@
         <button class="secondary-btn full" id="btnFinish">Finalizar y salir</button>
       </div>
     </section>
+
+    <section class="screen" id="screen-consult">
+      <div class="page-title"><span class="section-icon">☷</span><div><h1>Consultar ventas</h1><p>Busca una venta usando uno o varios filtros.</p></div></div>
+      <div class="form-card">
+        <label for="consultDate">Fecha <span>(opcional)</span></label><input id="consultDate" type="date">
+        <div class="two-col">
+          <div><label for="consultCode">Código <span>(opcional)</span></label><input id="consultCode" type="text" placeholder="Ej. 233"></div>
+          <div><label for="consultSaleId">N.º de venta <span>(opcional)</span></label><input id="consultSaleId" type="text" placeholder="Ej. V-0578"></div>
+        </div>
+        <div class="two-col">
+          <div><label for="consultCategory">Categoría <span>(opcional)</span></label><select id="consultCategory"><option value="">Todas</option></select></div>
+          <div><label for="consultSize">Talla <span>(opcional)</span></label><select id="consultSize"><option value="">Todas</option></select></div>
+        </div>
+        <button class="primary-btn full" id="btnFindSales">Buscar ventas →</button>
+        <button class="text-btn full" id="btnClearConsult">Limpiar filtros</button>
+      </div>
+      <div class="consult-actions"><button class="secondary-btn full" id="btnConsultToSales">← Volver a Ventas</button></div>
+    </section>
+
+    <section class="screen" id="screen-sales-results">
+      <div class="page-title compact"><span class="section-icon">🔎</span><div><h1>Ventas encontradas</h1><p>La fecha más reciente aparece primero.</p></div></div>
+      <div class="filter-chips" id="consultChips"></div>
+      <div class="result-count"><strong id="salesResultCount">0</strong><span>ventas</span></div>
+      <div class="consult-results" id="salesResults"></div>
+      <div class="empty-state hidden" id="salesEmpty"><div>🔍</div><h3>No encontramos ventas</h3><p>Modifica los filtros e inténtalo nuevamente.</p></div>
+      <div class="consult-actions"><button class="secondary-btn full" id="btnModifyConsult">← Modificar búsqueda</button><button class="secondary-btn full" id="btnResultsToSales">Volver a Ventas</button></div>
+    </section>
+
+    <section class="screen" id="screen-sale-detail">
+      <div class="page-title compact"><span class="section-icon">🧾</span><div><h1>Detalle de venta</h1><p id="detailSaleId">V-0000</p></div></div>
+      <div class="detail-card">
+        <div class="detail-product"><img id="detailImage" src="producto-demo.png" alt="Producto"><div><span class="eyebrow">Producto vendido</span><h2 id="detailCode">233</h2><p id="detailInfo">Marca · Categoría · Tipo · Color</p></div></div>
+        <div class="detail-grid">
+          <div class="detail-stat"><small>Fecha de venta</small><strong id="detailDate">—</strong></div>
+          <div class="detail-stat"><small>Precio de venta</small><strong id="detailPrice">—</strong></div>
+          <div class="detail-stat"><small>Talla vendida</small><strong id="detailSize">—</strong></div>
+          <div class="detail-stat"><small>ID Venta</small><strong id="detailId">—</strong></div>
+          <div class="detail-stat detail-wide"><small>Tallas disponibles después de la venta</small><strong id="detailAvailable">—</strong></div>
+          <div class="detail-stat detail-wide"><small>Observaciones</small><strong id="detailNotes">Sin observaciones</strong></div>
+        </div>
+      </div>
+      <div class="modified-box hidden" id="saleModifiedBox"><h3>⚠ Venta modificada</h3><div class="modified-dates" id="saleModifiedDates"></div><button class="secondary-btn full" id="btnSaleHistory">Ver historial de cambios</button></div>
+      <div class="consult-actions"><button class="primary-btn full" id="btnEditSale">Editar venta</button><button class="secondary-btn full" id="btnDetailBack">← Volver a resultados</button></div>
+    </section>
+
+    <section class="screen" id="screen-edit-sale">
+      <div class="page-title compact"><span class="section-icon">✎</span><div><h1>Editar venta</h1><p id="editSaleId">V-0000</p></div></div>
+      <div class="edit-original" id="editOriginal"></div>
+      <div class="form-card">
+        <h3>Nueva información</h3>
+        <label for="editSaleDate">Fecha</label><input id="editSaleDate" type="date">
+        <label for="editSaleSize">Talla vendida</label><select id="editSaleSize"></select>
+        <label for="editSalePrice">Precio de venta</label><div class="money-input"><span>S/</span><input id="editSalePrice" type="number" min="0" step="0.01"></div>
+        <label for="editSaleNotes">Observaciones <span>(opcional)</span></label><textarea id="editSaleNotes" rows="3"></textarea>
+        <label for="editSaleReason">Motivo de la corrección</label><textarea id="editSaleReason" rows="3" placeholder="Explica por qué se modifica esta venta"></textarea>
+        <button class="primary-btn full" id="btnSaveSaleCorrection">Guardar corrección</button>
+        <button class="secondary-btn full" id="btnCancelSaleEdit">Cancelar</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-sale-history">
+      <div class="page-title compact"><span class="section-icon">↺</span><div><h1>Historial de cambios</h1><p id="historySaleId">V-0000</p></div></div>
+      <div class="history-list" id="saleHistoryList"></div>
+      <div class="consult-actions"><button class="secondary-btn full" id="btnHistoryBack">← Volver al detalle</button></div>
+    </section>
+
   </main>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=ventas2"></script>
+  <script src="app.js?v=ventas3"></script>
 </body>
 </html>

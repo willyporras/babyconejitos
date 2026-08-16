@@ -149,7 +149,6 @@ $('#btnRegisterSale').onclick=registerSale;
 $('#btnChangeProduct').onclick=()=>show('screen-gallery');
 $('#btnAnotherSale').onclick=()=>{clearFilters();state.selected=null;show('screen-identify')};
 $('#btnFinish').onclick=()=>{exitToHome();toast('Registro finalizado.')};
-$('#btnConsultPlaceholder').onclick=()=>toast('Consultar Ventas será la siguiente etapa del prototipo.');
 $('#btnHelp').onclick=()=>toast('Prototipo de Registrar Venta.');
 
 $('#btnBack').onclick=()=>{
@@ -166,3 +165,83 @@ $('#btnBack').onclick=()=>{
 initFilters();
 $('#saleDate').value=todayISO;
 $('#btnBack').style.visibility='hidden';
+
+// ===== Consultar ventas (datos ficticios del prototipo) =====
+state.consultFilters={date:'',code:'',saleId:'',category:'',size:''};
+state.selectedSale=null;
+
+const demoSales=[
+  {id:'V-0580',date:'2026-08-15',product:products.find(p=>p.code==='235'),size:20,price:45,notes:'Precio regular.',available:['18','19','21'],history:[]},
+  {id:'V-0579',date:'2026-08-15',product:products.find(p=>p.code==='233'),size:21,price:38,notes:'Venta reconstruida con revisión de stock.',available:['18','19','20'],history:[]},
+  {id:'V-0578',date:'2026-08-14',product:products.find(p=>p.code==='A178'),size:19,price:42,notes:'Rebaja solicitada por cliente.',available:['17','18','20','21','22'],history:[]},
+  {id:'V-0577',date:'2026-08-13',product:products.find(p=>p.code==='ZN044'),size:24,price:55,notes:'',available:['22','23','25','26'],history:[]},
+  {id:'V-0576',date:'2026-08-12',product:products.find(p=>p.code==='A367'),size:20,price:48,notes:'',available:['17','18','19','21','22'],history:[]}
+];
+
+Object.assign(screenTitles,{
+  'screen-consult':'Consultar Ventas','screen-sales-results':'Consultar Ventas','screen-sale-detail':'Detalle de Venta','screen-edit-sale':'Editar Venta','screen-sale-history':'Historial de Venta'
+});
+
+function initConsultFilters(){
+  fillSelect('#consultCategory',unique('category'),'Todas');
+  fillSelect('#consultSize',[17,18,19,20,21,22,23,24,25,26,27],'Todas');
+}
+function clearConsultFilters(){
+  $('#consultDate').value='';$('#consultCode').value='';$('#consultSaleId').value='';$('#consultCategory').value='';$('#consultSize').value='';
+  state.consultFilters={date:'',code:'',saleId:'',category:'',size:''};
+}
+function getConsultFilters(){return {date:$('#consultDate').value,code:$('#consultCode').value.trim().toUpperCase(),saleId:$('#consultSaleId').value.trim().toUpperCase(),category:$('#consultCategory').value,size:$('#consultSize').value}}
+function allSales(){return [...demoSales,...(state.sessionSales||[])]}
+function findSales(){
+  const f=getConsultFilters();state.consultFilters=f;
+  const found=allSales().filter(s=>(!f.date||s.date===f.date)&&(!f.code||s.product.code.toUpperCase().includes(f.code))&&(!f.saleId||s.id.toUpperCase().includes(f.saleId))&&(!f.category||s.product.category===f.category)&&(!f.size||s.size===Number(f.size)))
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  renderSalesResults(found,f);show('screen-sales-results');
+}
+function renderSalesResults(found,f){
+  const chips=$('#consultChips');chips.innerHTML='';
+  if(f.date)addConsultChip('Fecha: '+formatDate(f.date));if(f.code)addConsultChip('Código: '+f.code);if(f.saleId)addConsultChip(f.saleId);if(f.category)addConsultChip(f.category);if(f.size)addConsultChip('Talla '+f.size);if(!Object.values(f).some(Boolean))addConsultChip('Todas las ventas');
+  $('#salesResultCount').textContent=found.length;$('#salesEmpty').classList.toggle('hidden',found.length>0);
+  const box=$('#salesResults');box.innerHTML='';
+  found.forEach(s=>{const b=document.createElement('button');b.className='sale-list-card';b.innerHTML=`<div class="sale-list-top"><span class="date-badge">${formatDate(s.date)}</span><span class="sale-id-badge">${s.id}</span></div><div class="sale-list-body"><img class="sale-thumb" src="producto-demo.png" alt="${s.product.code}"><div class="sale-list-main"><h3>Código ${s.product.code}</h3><p>${s.product.brand} · ${s.product.category}</p><p>Talla ${s.size}</p><span class="sale-list-arrow">Ver detalle →</span></div><div class="sale-list-price">S/ ${s.price.toFixed(2)}</div></div>`;b.onclick=()=>openSaleDetail(s);box.appendChild(b)});
+}
+function addConsultChip(text){const s=document.createElement('span');s.className='chip';s.textContent=text;$('#consultChips').appendChild(s)}
+function openSaleDetail(s){state.selectedSale=s;renderSaleDetail(s);show('screen-sale-detail')}
+function renderSaleDetail(s){
+  $('#detailSaleId').textContent=s.id;$('#detailId').textContent=s.id;$('#detailCode').textContent=s.product.code;$('#detailInfo').textContent=`${s.product.brand} · ${s.product.category} · ${s.product.type} · ${s.product.color}`;$('#detailDate').textContent=formatDate(s.date);$('#detailPrice').textContent=`S/ ${s.price.toFixed(2)}`;$('#detailSize').textContent=s.size;$('#detailAvailable').textContent=(s.available&&s.available.length)?s.available.join(', '):'Sin tallas disponibles';$('#detailNotes').textContent=s.notes||'Sin observaciones';
+  const has=s.history&&s.history.length;$('#saleModifiedBox').classList.toggle('hidden',!has);if(has){$('#saleModifiedDates').innerHTML=s.history.map((h,i)=>`<div>Corrección ${i+1}: <strong>${h.when}</strong></div>`).join('')}
+}
+function openEditSale(){
+  const s=state.selectedSale;if(!s)return;
+  $('#editSaleId').textContent=s.id;$('#editOriginal').innerHTML=`<h3>Datos antes de editar</h3><p><strong>Fecha:</strong> ${formatDate(s.date)}</p><p><strong>Talla:</strong> ${s.size}</p><p><strong>Precio:</strong> S/ ${s.price.toFixed(2)}</p><p><strong>Observaciones:</strong> ${s.notes||'Sin observaciones'}</p>`;
+  $('#editSaleDate').value=s.date;$('#editSaleSize').innerHTML=s.product.sizes.map(x=>`<option${x===s.size?' selected':''}>${x}</option>`).join('');$('#editSalePrice').value=s.price.toFixed(2);$('#editSaleNotes').value=s.notes||'';$('#editSaleReason').value='';show('screen-edit-sale');
+}
+function nowLabel(){return new Intl.DateTimeFormat('es-PE',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).replace(',',' -')}
+function saveSaleCorrection(){
+  const s=state.selectedSale;if(!s)return;const next={date:$('#editSaleDate').value,size:Number($('#editSaleSize').value),price:Number($('#editSalePrice').value),notes:$('#editSaleNotes').value.trim()};
+  const changes=[];if(next.date!==s.date)changes.push({field:'Fecha',from:formatDate(s.date),to:formatDate(next.date)});if(next.size!==s.size)changes.push({field:'Talla',from:String(s.size),to:String(next.size)});if(next.price!==s.price)changes.push({field:'Precio',from:`S/ ${s.price.toFixed(2)}`,to:`S/ ${next.price.toFixed(2)}`});if(next.notes!==s.notes)changes.push({field:'Observaciones',from:s.notes||'Sin observaciones',to:next.notes||'Sin observaciones'});
+  if(!changes.length){toast('No se detectaron cambios.');renderSaleDetail(s);show('screen-sale-detail');return}
+  const reason=$('#editSaleReason').value.trim();if(!reason){toast('Indica el motivo de la corrección.');return}if(!next.date||!Number.isFinite(next.price)||next.price<=0){toast('Revisa fecha y precio.');return}
+  s.history=s.history||[];s.history.push({when:nowLabel(),changes,reason});s.date=next.date;s.size=next.size;s.price=next.price;s.notes=next.notes;renderSaleDetail(s);show('screen-sale-detail');toast('Corrección guardada.');
+}
+function renderSaleHistory(){const s=state.selectedSale;if(!s)return;$('#historySaleId').textContent=s.id;$('#saleHistoryList').innerHTML=(s.history||[]).map((h,i)=>`<div class="history-item"><div class="history-head">Corrección ${i+1} realizada el ${h.when}</div>${h.changes.map(c=>`<div class="history-change"><small>${c.field}</small><strong>${c.from} → ${c.to}</strong></div>`).join('')}<div class="history-reason"><small>Motivo</small><div>${h.reason}</div></div></div>`).join('')||'<div class="empty-state"><h3>Sin correcciones</h3></div>';show('screen-sale-history')}
+function leaveConsultToSales(){clearConsultFilters();state.selectedSale=null;show('screen-home')}
+
+// Las ventas registradas durante esta sesión también aparecen en Consultar Ventas.
+state.sessionSales=[];
+const originalRegisterSale=registerSale;
+registerSale=function(){
+  const before=state.nextSale;originalRegisterSale();
+  if(state.lastSale&&state.nextSale===before+1){const s=state.lastSale;s.available=remainingSizesAfterSale(s.product,s.size);s.history=[];state.sessionSales.push(s)}
+};
+$('#btnRegisterSale').onclick=registerSale;
+
+$('#btnConsultSales').onclick=()=>show('screen-consult');
+$('#btnFindSales').onclick=findSales;$('#btnClearConsult').onclick=clearConsultFilters;$('#btnConsultToSales').onclick=leaveConsultToSales;$('#btnResultsToSales').onclick=leaveConsultToSales;$('#btnModifyConsult').onclick=()=>show('screen-consult');$('#btnDetailBack').onclick=()=>show('screen-sales-results');$('#btnEditSale').onclick=openEditSale;$('#btnCancelSaleEdit').onclick=()=>{renderSaleDetail(state.selectedSale);show('screen-sale-detail')};$('#btnSaveSaleCorrection').onclick=saveSaleCorrection;$('#btnSaleHistory').onclick=renderSaleHistory;$('#btnHistoryBack').onclick=()=>{renderSaleDetail(state.selectedSale);show('screen-sale-detail')};
+
+const oldBack=$('#btnBack').onclick;
+$('#btnBack').onclick=()=>{
+  const consultBack={'screen-consult':'screen-home','screen-sales-results':'screen-consult','screen-sale-detail':'screen-sales-results','screen-edit-sale':'screen-sale-detail','screen-sale-history':'screen-sale-detail'};
+  if(consultBack[state.screen]){if(state.screen==='screen-consult'){leaveConsultToSales();return}show(consultBack[state.screen]);return}oldBack();
+};
+initConsultFilters();
