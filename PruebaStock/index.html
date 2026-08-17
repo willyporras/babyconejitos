@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prototipo Stock</title>
+  <link rel="stylesheet" href="estilos.css?v=1">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="icon-btn" id="btnBack" aria-label="Volver">←</button>
+      <div class="brand">
+        <div class="brand-icon">👟</div>
+        <div>
+          <strong>Sistema de Stock</strong>
+          <small id="breadcrumb">Inicio</small>
+        </div>
+      </div>
+      <button class="icon-btn" id="btnHome" aria-label="Inicio">⌂</button>
+    </header>
+
+    <main>
+      <!-- INICIO -->
+      <section class="screen active" id="screenInicio">
+        <div class="hero">
+          <span class="eyebrow">PROTO-STOCK</span>
+          <h1>Stock</h1>
+          <p>Consulta existencias, revisa cobertura por categoría y color, o busca un producto específico.</p>
+        </div>
+
+        <div class="action-grid">
+          <button class="action-card primary" data-go="screenCobertura">
+            <span class="action-icon">📊</span>
+            <span>
+              <strong>Ver cobertura</strong>
+              <small>Cuántos pares y qué tallas tengo por categoría y color.</small>
+            </span>
+            <span class="arrow">›</span>
+          </button>
+
+          <button class="action-card" data-go="screenBuscar">
+            <span class="action-icon">🔎</span>
+            <span>
+              <strong>Buscar producto</strong>
+              <small>Consulta por código, marca, categoría, tipo, color o talla.</small>
+            </span>
+            <span class="arrow">›</span>
+          </button>
+        </div>
+
+        <div class="info-card">
+          <strong>💡 Ajuste manual</strong>
+          <p>Se realiza desde el detalle de un producto y conserva el motivo e historial de cambios.</p>
+        </div>
+      </section>
+
+      <!-- COBERTURA -->
+      <section class="screen" id="screenCobertura">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">COBERTURA</span>
+            <h2>¿Qué tengo disponible?</h2>
+            <p>La cobertura suma las tallas de todos los modelos que coinciden con la categoría y color seleccionados.</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <label>
+            Categoría
+            <select id="cobCategoria">
+              <option value="">Seleccionar</option>
+            </select>
+          </label>
+
+          <label>
+            Color
+            <select id="cobColor" disabled>
+              <option value="">Seleccionar categoría primero</option>
+            </select>
+          </label>
+
+          <button class="btn btn-primary" id="btnVerCobertura">Ver cobertura</button>
+          <button class="btn btn-ghost" id="btnLimpiarCobertura">Limpiar</button>
+        </div>
+
+        <div id="coberturaResultado" class="hidden">
+          <div class="coverage-title">
+            <div>
+              <span class="eyebrow">RESULTADO</span>
+              <h3 id="coberturaNombre">—</h3>
+            </div>
+            <span class="pill" id="coberturaTotal">0 pares</span>
+          </div>
+
+          <div class="size-grid" id="coberturaTallas"></div>
+
+          <div class="info-card compact">
+            <strong>Lectura rápida</strong>
+            <p id="coberturaLectura">—</p>
+          </div>
+
+          <button class="btn btn-secondary" id="btnVerCodigosCobertura">Ver códigos que componen este stock</button>
+
+          <div id="coberturaCodigos" class="hidden">
+            <h3>Productos incluidos</h3>
+            <div class="product-list" id="listaCodigosCobertura"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost bottom-exit" data-go="screenInicio" data-reset="true">← Volver a Stock</button>
+      </section>
+
+      <!-- BUSCAR -->
+      <section class="screen" id="screenBuscar">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">BÚSQUEDA</span>
+            <h2>Buscar producto</h2>
+            <p>El código tiene prioridad. Si no lo sabes, usa los filtros que tengas disponibles.</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <label class="full">
+            Código
+            <input type="text" id="busCodigo" placeholder="Ej. 233">
+            <small>Si escribes un código, los demás filtros se usan solo como apoyo visual.</small>
+          </label>
+
+          <label>
+            Marca
+            <select id="busMarca"><option value="">Todas</option></select>
+          </label>
+
+          <label>
+            Categoría
+            <select id="busCategoria"><option value="">Todas</option></select>
+          </label>
+
+          <label>
+            Tipo
+            <select id="busTipo"><option value="">Todos</option></select>
+          </label>
+
+          <label>
+            Color
+            <select id="busColor"><option value="">Todos</option></select>
+          </label>
+
+          <label>
+            Talla
+            <select id="busTalla"><option value="">Todas</option></select>
+          </label>
+
+          <label class="check-line full">
+            <input type="checkbox" id="busIncluirCero" checked>
+            <span>Incluir stock cero solo si el código tuvo compra o venta reciente (regla simulada: últimos 4 meses).</span>
+          </label>
+
+          <button class="btn btn-primary" id="btnBuscar">Buscar productos</button>
+          <button class="btn btn-ghost" id="btnLimpiarBusqueda">Limpiar</button>
+        </div>
+
+        <div id="buscarResultado" class="hidden">
+          <div class="result-head">
+            <strong id="resultadoCantidad">0 resultados</strong>
+            <span>Orden: stock disponible primero</span>
+          </div>
+          <div class="gallery" id="galeriaProductos"></div>
+        </div>
+
+        <button class="btn btn-ghost bottom-exit" data-go="screenInicio" data-reset="true">← Volver a Stock</button>
+      </section>
+
+      <!-- DETALLE PRODUCTO -->
+      <section class="screen" id="screenDetalle">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">DETALLE</span>
+            <h2>Detalle del producto</h2>
+          </div>
+        </div>
+
+        <div class="detail-layout">
+          <div class="product-photo-card">
+            <div class="shoe-art" id="detalleArte">👟</div>
+            <strong class="product-code" id="detalleCodigo">—</strong>
+            <span id="detalleDesc">—</span>
+          </div>
+
+          <div class="detail-info">
+            <div class="metric-card"><span>Marca</span><strong id="detalleMarca">—</strong></div>
+            <div class="metric-card"><span>Total de pares</span><strong id="detalleTotal">0</strong></div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <h3>Stock por talla</h3>
+          <div class="size-grid" id="detalleTallas"></div>
+        </div>
+
+        <div class="info-card compact">
+          <strong>Estado del código</strong>
+          <p id="detalleEstado">—</p>
+        </div>
+
+        <div class="button-stack">
+          <button class="btn btn-primary" id="btnAjustar">Ajustar stock manualmente</button>
+          <button class="btn btn-secondary hidden" id="btnHistorial">Ver historial de ajustes</button>
+          <button class="btn btn-ghost" id="btnDetalleVolver">← Volver a resultados</button>
+        </div>
+      </section>
+
+      <!-- AJUSTE -->
+      <section class="screen" id="screenAjuste">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">AJUSTE MANUAL</span>
+            <h2 id="ajusteTitulo">Ajustar stock</h2>
+            <p>Corrige una diferencia física o un error de registro. El motivo es obligatorio.</p>
+          </div>
+        </div>
+
+        <div class="info-card compact">
+          <strong>Stock antes del ajuste</strong>
+          <p id="ajusteOriginal">—</p>
+        </div>
+
+        <div class="form-card">
+          <label>
+            Talla
+            <select id="ajusteTalla"></select>
+          </label>
+
+          <label>
+            Cantidad correcta
+            <div class="stepper">
+              <button type="button" id="ajusteMenos">−</button>
+              <input type="number" min="0" id="ajusteCantidad" value="0">
+              <button type="button" id="ajusteMas">+</button>
+            </div>
+          </label>
+
+          <label class="full">
+            Motivo del ajuste
+            <textarea id="ajusteMotivo" rows="4" placeholder="Ej. Error de conteo físico / par extraviado / registro incorrecto"></textarea>
+          </label>
+
+          <button class="btn btn-primary" id="btnGuardarAjuste">Guardar ajuste</button>
+          <button class="btn btn-ghost" id="btnCancelarAjuste">Cancelar</button>
+        </div>
+      </section>
+
+      <!-- HISTORIAL -->
+      <section class="screen" id="screenHistorial">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">TRAZABILIDAD</span>
+            <h2>Historial de ajustes</h2>
+            <p id="historialProducto">—</p>
+          </div>
+        </div>
+
+        <div id="historialLista" class="history-list"></div>
+        <button class="btn btn-ghost bottom-exit" id="btnHistorialVolver">← Volver al detalle</button>
+      </section>
+    </main>
+
+    <footer class="bottom-nav">
+      <button data-go="screenInicio" data-reset="true"><span>⌂</span>Inicio</button>
+      <button class="active"><span>📦</span>Stock</button>
+      <button disabled><span>🛒</span>Compras</button>
+      <button disabled><span>💰</span>Ventas</button>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
