@@ -215,7 +215,8 @@ function renderCoverageProducts(){
       <div>
         <strong>Código ${p.code}</strong><br>
         <small><b>${p.brand}</b></small><br>
-        <small>${p.type}</small>
+        <small>${p.type}</small><br>
+        <small><b>Tallas:</b> ${formatStock(p.sizes)}</small>
       </div>
       <button data-open="${p.code}" data-origin="coverage">Ver detalle</button>
     </div>`).join("");
@@ -280,6 +281,7 @@ function renderSearch(result){
         <strong>Código ${p.code}</strong>
         <small><b>${p.brand}</b></small>
         <small>${p.type}</small>
+        <small><b>Tallas:</b> ${formatStock(p.sizes)}</small>
       </button>`).join("");
   }
   wrap.classList.remove("hidden");
