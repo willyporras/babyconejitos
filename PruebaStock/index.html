@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prototipo Stock</title>
-  <link rel="stylesheet" href="estilos.css?v=1">
+  <link rel="stylesheet" href="estilos.css?v=2">
 </head>
 <body>
   <div class="app-shell">
@@ -145,7 +145,9 @@
 
           <label>
             Color
-            <select id="busColor"><option value="">Todos</option></select>
+            <select id="busColor" disabled>
+              <option value="">Seleccionar categoría primero</option>
+            </select>
           </label>
 
           <label>
@@ -186,13 +188,19 @@
           <div class="product-photo-card">
             <div class="shoe-art" id="detalleArte">👟</div>
             <strong class="product-code" id="detalleCodigo">—</strong>
-            <span id="detalleDesc">—</span>
           </div>
 
           <div class="detail-info">
             <div class="metric-card"><span>Marca</span><strong id="detalleMarca">—</strong></div>
+            <div class="metric-card"><span>Categoría</span><strong id="detalleCategoria">—</strong></div>
+            <div class="metric-card"><span>Tipo</span><strong id="detalleTipo">—</strong></div>
             <div class="metric-card"><span>Total de pares</span><strong id="detalleTotal">0</strong></div>
           </div>
+        </div>
+
+        <div class="product-detail-card">
+          <span>Detalle del producto</span>
+          <strong id="detalleTexto">—</strong>
         </div>
 
         <div class="stock-card">
@@ -276,6 +284,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

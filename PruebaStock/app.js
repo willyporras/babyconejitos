@@ -78,8 +78,8 @@ function initFilters(){
   fillSelect("busMarca", unique("brand"), "Todas");
   fillSelect("busCategoria", unique("category"), "Todas");
   fillSelect("busTipo", unique("type"), "Todos");
-  fillSelect("busColor", unique("color"), "Todos");
   fillSelect("busTalla", allSizes(), "Todas");
+  updateSearchColors();
 }
 
 function setBreadcrumb(screen){
@@ -152,6 +152,20 @@ function updateCoverageColors(){
   color.innerHTML='<option value="">Seleccionar</option>'+colors.map(c=>`<option>${c}</option>`).join("");
 }
 
+document.getElementById("busCategoria").addEventListener("change",updateSearchColors);
+function updateSearchColors(){
+  const cat=document.getElementById("busCategoria").value;
+  const color=document.getElementById("busColor");
+  if(!cat){
+    color.disabled=true;
+    color.innerHTML='<option value="">Seleccionar categoría primero</option>';
+    return;
+  }
+  const colors=[...new Set(products.filter(p=>p.category===cat).map(p=>p.color))].sort();
+  color.disabled=false;
+  color.innerHTML='<option value="">Todos</option>'+colors.map(c=>`<option>${c}</option>`).join("");
+}
+
 document.getElementById("btnLimpiarCobertura").addEventListener("click",()=>{
   document.getElementById("cobCategoria").value="";
   updateCoverageColors();
@@ -200,10 +214,10 @@ function renderCoverageProducts(){
       <div class="product-thumb">${p.icon}</div>
       <div>
         <strong>Código ${p.code}</strong><br>
-        <small>${p.brand} · ${p.type} · ${p.detail}</small><br>
-        <small>${formatStock(p.sizes)}</small>
+        <small><b>${p.brand}</b></small><br>
+        <small>${p.type}</small>
       </div>
-      <button data-open="${p.code}" data-origin="coverage">Ver</button>
+      <button data-open="${p.code}" data-origin="coverage">Ver detalle</button>
     </div>`).join("");
 }
 
@@ -219,6 +233,7 @@ function clearSearch(){
     if(el) el.value="";
   });
   document.getElementById("busIncluirCero").checked=true;
+  updateSearchColors();
   document.getElementById("buscarResultado").classList.add("hidden");
   document.getElementById("galeriaProductos").innerHTML="";
 }
@@ -263,8 +278,8 @@ function renderSearch(result){
       <button class="product-card ${totalStock(p)===0?"zero-stock":""}" data-product="${p.code}">
         <div class="shoe-art">${p.icon}</div>
         <strong>Código ${p.code}</strong>
-        <small>${p.brand} · ${p.category} · ${p.color}</small>
-        <small><b>${totalStock(p)} pares</b> · ${formatStock(p.sizes)}</small>
+        <small><b>${p.brand}</b></small>
+        <small>${p.type}</small>
       </button>`).join("");
   }
   wrap.classList.remove("hidden");
@@ -291,9 +306,11 @@ function openProduct(code,origin="screenBuscar"){
   app.previous=origin;
   document.getElementById("detalleArte").textContent=p.icon;
   document.getElementById("detalleCodigo").textContent=`Código ${p.code}`;
-  document.getElementById("detalleDesc").textContent=`${p.category} · ${p.type} · ${p.color} · ${p.detail}`;
   document.getElementById("detalleMarca").textContent=p.brand;
+  document.getElementById("detalleCategoria").textContent=p.category;
+  document.getElementById("detalleTipo").textContent=p.type;
   document.getElementById("detalleTotal").textContent=totalStock(p);
+  document.getElementById("detalleTexto").textContent=p.detail || "Sin detalle adicional";
   document.getElementById("detalleTallas").innerHTML=Object.keys(p.sizes).map(Number).sort((a,b)=>a-b).map(s=>`
     <div class="size-box ${p.sizes[s]===0?"zero":""}">
       <span>Talla ${s}</span><strong>${p.sizes[s]}</strong><span>${p.sizes[s]===1?"par":"pares"}</span>
