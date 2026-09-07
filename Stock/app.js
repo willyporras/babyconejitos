@@ -2,76 +2,86 @@ const READ_ONLY_MODE = true;
 
 let products = [];
 
-const STOCK_API_URL = (window.STOCK_CONFIG && window.STOCK_CONFIG.apiUrl || "").trim();
+const STOCK_API_URL =
+  (
+    window.STOCK_CONFIG &&
+    window.STOCK_CONFIG.apiUrl ||
+    ""
+  ).trim();
+
 const STOCK_LOAD_TIMEOUT_MS = 15000;
 
 
 /* =========================================================
    IMÁGENES DE GOOGLE DRIVE
-
-   Convierte enlaces como:
-
-   https://drive.google.com/uc?id=ARCHIVO
-
-   https://drive.google.com/file/d/ARCHIVO/view
-
-   https://drive.google.com/open?id=ARCHIVO
-
-   a:
-
-   https://drive.google.com/thumbnail?id=ARCHIVO&sz=w1000
    ========================================================= */
+
 function normalizeImageUrl(url){
 
-  const value = String(url || "").trim();
+  const value =
+    String(url || "").trim();
 
-  if(!value) return "";
+  if(!value)
+    return "";
 
-  let match = null;
 
-  // Formato:
-  // https://drive.google.com/uc?id=FILE_ID
-  match = value.match(
-    /drive\.google\.com\/uc\?(?:[^#]*&)?id=([^&]+)/i
-  );
+  let match =
+    value.match(
+      /drive\.google\.com\/uc\?(?:[^#]*&)?id=([^&]+)/i
+    );
+
 
   if(match){
-    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+    return (
+      "https://drive.google.com/thumbnail?id=" +
+      encodeURIComponent(match[1]) +
+      "&sz=w1000"
+    );
   }
 
 
-  // Formato:
-  // https://drive.google.com/file/d/FILE_ID/view
-  match = value.match(
-    /drive\.google\.com\/file\/d\/([^/]+)/i
-  );
+  match =
+    value.match(
+      /drive\.google\.com\/file\/d\/([^/]+)/i
+    );
+
 
   if(match){
-    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+    return (
+      "https://drive.google.com/thumbnail?id=" +
+      encodeURIComponent(match[1]) +
+      "&sz=w1000"
+    );
   }
 
 
-  // Formato:
-  // https://drive.google.com/open?id=FILE_ID
-  match = value.match(
-    /drive\.google\.com\/open\?(?:[^#]*&)?id=([^&]+)/i
-  );
+  match =
+    value.match(
+      /drive\.google\.com\/open\?(?:[^#]*&)?id=([^&]+)/i
+    );
+
 
   if(match){
-    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+    return (
+      "https://drive.google.com/thumbnail?id=" +
+      encodeURIComponent(match[1]) +
+      "&sz=w1000"
+    );
   }
 
 
-  // Si no es un enlace de Drive conocido,
-  // se mantiene la URL original.
   return value;
 }
 
 
+
 /* =========================================================
-   NORMALIZACIÓN DE PRODUCTOS
-   Acepta nombres en español o inglés.
+   NORMALIZACIÓN DE DATOS
    ========================================================= */
+
 function normalizeProduct(raw){
 
   const sourceSizes =
@@ -79,172 +89,151 @@ function normalizeProduct(raw){
     raw.tallas ||
     {};
 
+
   const sizes = {};
 
-  Object.entries(sourceSizes).forEach(([s,q])=>{
 
-    const n = Number(
-      String(q ?? 0).replace(",",".")
-    );
+  Object.entries(
+    sourceSizes
+  )
+  .forEach(
+    ([s,q])=>{
 
-    sizes[String(Number(s))] =
-      Number.isFinite(n)
-        ? n
-        : 0;
-  });
+      const n =
+        Number(
+          String(
+            q ?? 0
+          )
+          .replace(
+            ",",
+            "."
+          )
+        );
+
+
+      sizes[
+        String(
+          Number(s)
+        )
+      ] =
+        Number.isFinite(n)
+          ? n
+          : 0;
+    }
+  );
 
 
   return {
 
-    code:String(
-      raw.code ??
-      raw.codigo ??
-      ""
-    ).trim(),
+    code:
+      String(
+        raw.code ??
+        raw.codigo ??
+        ""
+      ).trim(),
 
-    brand:String(
-      raw.brand ??
-      raw.marca ??
-      ""
-    ).trim(),
 
-    category:String(
-      raw.category ??
-      raw.categoria ??
-      ""
-    ).trim(),
+    brand:
+      String(
+        raw.brand ??
+        raw.marca ??
+        ""
+      ).trim(),
 
-    type:String(
-      raw.type ??
-      raw.tipo ??
-      ""
-    ).trim(),
 
-    color:String(
-      raw.color ??
-      ""
-    ).trim(),
+    category:
+      String(
+        raw.category ??
+        raw.categoria ??
+        ""
+      ).trim(),
 
-    detail:String(
-      raw.detail ??
-      raw.detalle ??
-      ""
-    ).trim(),
+
+    type:
+      String(
+        raw.type ??
+        raw.tipo ??
+        ""
+      ).trim(),
+
+
+    color:
+      String(
+        raw.color ??
+        ""
+      ).trim(),
+
+
+    detail:
+      String(
+        raw.detail ??
+        raw.detalle ??
+        ""
+      ).trim(),
+
 
     sizes,
 
-    imageUrl:normalizeImageUrl(
-      raw.imageUrl ??
-      raw.imagen ??
-      ""
-    ),
+
+    imageUrl:
+      normalizeImageUrl(
+        raw.imageUrl ??
+        raw.imagen ??
+        ""
+      ),
+
 
     icon:"👟"
   };
 }
 
 
+
 /* =========================================================
    ESTADO DE CONEXIÓN
    ========================================================= */
-function setDataStatus(message, kind="info"){
+
+function setDataStatus(
+  message,
+  kind="info"
+){
 
   const el =
-    document.getElementById("dataStatus");
+    document.getElementById(
+      "dataStatus"
+    );
 
-  if(!el) return;
 
-  el.textContent = message;
-  el.dataset.kind = kind;
+  if(!el)
+    return;
+
+
+  el.textContent =
+    message;
+
+
+  el.dataset.kind =
+    kind;
 }
 
 
+
 /* =========================================================
-   CARGA DE STOCK DESDE GOOGLE APPS SCRIPT
-   JSONP
+   CARGAR DATOS DESDE APPS SCRIPT
    ========================================================= */
+
 function loadStockData(){
 
-  return new Promise((resolve,reject)=>{
-
-    if(!STOCK_API_URL){
-
-      reject(
-        new Error(
-          "Falta configurar la URL de la API de Stock."
-        )
-      );
-
-      return;
-    }
-
-
-    const callbackName =
-      `__stockCallback_${Date.now()}`;
-
-
-    const script =
-      document.createElement("script");
-
-
-    let finished = false;
-
-
-    const cleanup = ()=>{
-
-      delete window[callbackName];
-
-      script.remove();
-    };
-
-
-    const timer = setTimeout(()=>{
-
-      if(finished) return;
-
-      finished = true;
-
-      cleanup();
-
-      reject(
-        new Error(
-          "La consulta de Stock tardó demasiado."
-        )
-      );
-
-    }, STOCK_LOAD_TIMEOUT_MS);
-
-
-    window[callbackName] = (payload)=>{
-
-      if(finished) return;
-
-      finished = true;
-
-      clearTimeout(timer);
-
-      cleanup();
-
-
-      const rows =
-        Array.isArray(payload?.products)
-          ? payload.products
-          : Array.isArray(payload?.productos)
-            ? payload.productos
-            : null;
-
+  return new Promise(
+    (resolve,reject)=>{
 
       if(
-        !payload ||
-        payload.ok !== true ||
-        !rows
+        !STOCK_API_URL
       ){
 
         reject(
           new Error(
-            payload && payload.error
-              ? payload.error
-              : "Respuesta inválida de la API de Stock."
+            "Falta configurar la URL de la API de Stock."
           )
         );
 
@@ -252,56 +241,195 @@ function loadStockData(){
       }
 
 
-      products = rows
-        .map(normalizeProduct)
-        .filter(p=>p.code);
+      const callbackName =
+        `__stockCallback_${Date.now()}`;
 
 
-      resolve(payload);
-    };
+      const script =
+        document.createElement(
+          "script"
+        );
 
 
-    script.onerror = ()=>{
+      let finished =
+        false;
 
-      if(finished) return;
 
-      finished = true;
+      const cleanup =
+        ()=>{
 
-      clearTimeout(timer);
+          delete window[
+            callbackName
+          ];
 
-      cleanup();
+          script.remove();
+        };
 
-      reject(
-        new Error(
-          "No se pudo conectar con la API de Stock."
+
+      const timer =
+        setTimeout(
+          ()=>{
+
+            if(finished)
+              return;
+
+
+            finished =
+              true;
+
+
+            cleanup();
+
+
+            reject(
+              new Error(
+                "La consulta de Stock tardó demasiado."
+              )
+            );
+
+          },
+          STOCK_LOAD_TIMEOUT_MS
+        );
+
+
+      window[
+        callbackName
+      ] =
+        payload=>{
+
+          if(finished)
+            return;
+
+
+          finished =
+            true;
+
+
+          clearTimeout(
+            timer
+          );
+
+
+          cleanup();
+
+
+          const rows =
+            Array.isArray(
+              payload?.products
+            )
+            ?
+              payload.products
+            :
+            Array.isArray(
+              payload?.productos
+            )
+            ?
+              payload.productos
+            :
+              null;
+
+
+          if(
+            !payload ||
+            payload.ok !== true ||
+            !rows
+          ){
+
+            reject(
+              new Error(
+                payload &&
+                payload.error
+                  ?
+                    payload.error
+                  :
+                    "Respuesta inválida de la API de Stock."
+              )
+            );
+
+            return;
+          }
+
+
+          products =
+            rows
+              .map(
+                normalizeProduct
+              )
+              .filter(
+                p=>p.code
+              );
+
+
+          resolve(
+            payload
+          );
+        };
+
+
+      script.onerror =
+        ()=>{
+
+          if(finished)
+            return;
+
+
+          finished =
+            true;
+
+
+          clearTimeout(
+            timer
+          );
+
+
+          cleanup();
+
+
+          reject(
+            new Error(
+              "No se pudo conectar con la API de Stock."
+            )
+          );
+        };
+
+
+      const sep =
+        STOCK_API_URL.includes(
+          "?"
         )
+        ?
+          "&"
+        :
+          "?";
+
+
+      script.src =
+        `${STOCK_API_URL}${sep}` +
+        `callback=${encodeURIComponent(callbackName)}` +
+        `&_=${Date.now()}`;
+
+
+      document.head.appendChild(
+        script
       );
-    };
-
-
-    const sep =
-      STOCK_API_URL.includes("?")
-        ? "&"
-        : "?";
-
-
-    script.src =
-      `${STOCK_API_URL}${sep}` +
-      `callback=${encodeURIComponent(callbackName)}` +
-      `&_=${Date.now()}`;
-
-
-    document.head.appendChild(script);
-  });
+    }
+  );
 }
 
 
-/* =========================================================
-   IMAGEN DEL PRODUCTO
-   ========================================================= */
-function productVisual(p, thumb=false){
 
-  if(p.imageUrl){
+/* =========================================================
+   IMAGEN DE PRODUCTO
+   ========================================================= */
+
+function productVisual(
+  p,
+  thumb=false
+){
+
+  if(
+    p.imageUrl
+  ){
 
     return `
       <img
@@ -314,45 +442,92 @@ function productVisual(p, thumb=false){
     `;
   }
 
-  return p.icon || "👟";
+
+  return (
+    p.icon ||
+    "👟"
+  );
 }
 
 
+
 /* =========================================================
-   ESTADO DE LA APP
+   ESTADO GENERAL
    ========================================================= */
+
 const app = {
 
-  current:"screenInicio",
+  current:
+    "screenInicio",
 
-  previous:"screenInicio",
+  previous:
+    "screenInicio",
 
-  selectedProduct:null,
+  selectedProduct:
+    null,
 
-  selectedCoverage:null
+  selectedCoverage:
+    null
 };
 
 
+
 /* =========================================================
-   FUNCIONES GENERALES
+   UTILIDADES
    ========================================================= */
+
 function totalStock(p){
 
-  return Object.values(p.sizes)
+  return Object
+    .values(
+      p.sizes
+    )
     .reduce(
-      (a,b)=>a+Number(b||0),
+      (a,b)=>
+        a +
+        Number(
+          b || 0
+        ),
       0
     );
 }
 
 
-function unique(field){
+
+function normalizeText(value){
+
+  return String(
+    value || ""
+  )
+  .trim()
+  .normalize(
+    "NFD"
+  )
+  .replace(
+    /[\u0300-\u036f]/g,
+    ""
+  )
+  .toLocaleLowerCase(
+    "es"
+  );
+}
+
+
+
+function uniqueValues(
+  list,
+  field
+){
 
   return [
     ...new Set(
-      products
-        .map(p=>p[field])
-        .filter(Boolean)
+      list
+        .map(
+          p=>p[field]
+        )
+        .filter(
+          Boolean
+        )
     )
   ]
   .sort(
@@ -366,87 +541,911 @@ function unique(field){
 }
 
 
-function allSizes(){
+
+function allSizesFrom(
+  list
+){
 
   return [
     ...new Set(
-      products.flatMap(
+      list.flatMap(
         p=>
-          Object.keys(p.sizes)
-            .map(Number)
+          Object
+            .keys(
+              p.sizes
+            )
+            .map(
+              Number
+            )
+      )
+      .filter(
+        Number.isFinite
       )
     )
   ]
   .sort(
-    (a,b)=>a-b
+    (a,b)=>
+      a-b
   );
 }
 
 
-function fillSelect(id, values, first){
+
+function fillSelect(
+  id,
+  values,
+  first,
+  selectedValue=""
+){
 
   const el =
-    document.getElementById(id);
+    document.getElementById(
+      id
+    );
+
+
+  if(!el)
+    return;
+
+
+  const selected =
+    values
+      .map(
+        String
+      )
+      .includes(
+        String(
+          selectedValue
+        )
+      )
+    ?
+      String(
+        selectedValue
+      )
+    :
+      "";
 
 
   el.innerHTML =
-    `<option value="">${first}</option>` +
+    `<option value="">${escapeHtml(first)}</option>` +
 
-    values.map(
-      v=>
-        `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`
-    ).join("");
+    values
+      .map(
+        v=>
+          `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`
+      )
+      .join(
+        ""
+      );
+
+
+  el.value =
+    selected;
 }
 
 
+
 /* =========================================================
-   FILTROS
+   FILTROS INTERCONECTADOS
    ========================================================= */
+
+const SEARCH_FIELDS = [
+  "category",
+  "type",
+  "color",
+  "size"
+];
+
+
+const SEARCH_ELEMENT_BY_FIELD = {
+
+  category:
+    "busCategoria",
+
+  type:
+    "busTipo",
+
+  color:
+    "busColor",
+
+  size:
+    "busTalla"
+};
+
+
+
+function getSearchState(){
+
+  return {
+
+    brand:
+      document
+        .getElementById(
+          "busMarca"
+        )
+        .value
+        .trim(),
+
+
+    category:
+      document
+        .getElementById(
+          "busCategoria"
+        )
+        .value,
+
+
+    type:
+      document
+        .getElementById(
+          "busTipo"
+        )
+        .value,
+
+
+    color:
+      document
+        .getElementById(
+          "busColor"
+        )
+        .value,
+
+
+    size:
+      document
+        .getElementById(
+          "busTalla"
+        )
+        .value
+  };
+}
+
+
+
+/* =========================================================
+   COINCIDENCIA DE MARCA
+
+   Si se escribe:
+   K
+
+   coincidirá con:
+   Kelly
+   Kids
+   etc.
+   ========================================================= */
+
+function brandStartsWith(
+  brand,
+  query
+){
+
+  if(!query)
+    return true;
+
+
+  return normalizeText(
+    brand
+  )
+  .startsWith(
+    normalizeText(
+      query
+    )
+  );
+}
+
+
+
+/* =========================================================
+   TALLA ESTRUCTURAL
+
+   Para construir filtros se considera que una talla
+   pertenece a un producto aunque su stock sea cero.
+
+   Ejemplo:
+   PibeNiño puede seguir mostrando 17–22 aunque
+   algunas tallas tengan cantidad 0.
+   ========================================================= */
+
+function hasStructuralSize(
+  product,
+  size
+){
+
+  if(!size)
+    return true;
+
+
+  return Object
+    .prototype
+    .hasOwnProperty
+    .call(
+      product.sizes,
+      String(size)
+    );
+}
+
+
+
+/* =========================================================
+   COMPROBAR FILTROS ACTIVOS
+
+   ignoreField permite calcular qué opciones son
+   válidas para un campo concreto sin que ese mismo
+   campo se limite a sí mismo.
+   ========================================================= */
+
+function matchesLinkedFilters(
+  product,
+  ignoreField=null
+){
+
+  const f =
+    getSearchState();
+
+
+  if(
+    ignoreField !== "brand" &&
+    f.brand &&
+    !brandStartsWith(
+      product.brand,
+      f.brand
+    )
+  )
+    return false;
+
+
+  if(
+    ignoreField !== "category" &&
+    f.category &&
+    product.category !==
+      f.category
+  )
+    return false;
+
+
+  if(
+    ignoreField !== "type" &&
+    f.type &&
+    product.type !==
+      f.type
+  )
+    return false;
+
+
+  if(
+    ignoreField !== "color" &&
+    f.color &&
+    product.color !==
+      f.color
+  )
+    return false;
+
+
+  if(
+    ignoreField !== "size" &&
+    f.size &&
+    !hasStructuralSize(
+      product,
+      f.size
+    )
+  )
+    return false;
+
+
+  return true;
+}
+
+
+
+/* =========================================================
+   OPCIONES VÁLIDAS PARA CADA FILTRO
+   ========================================================= */
+
+function optionsForSearchField(
+  field
+){
+
+  const base =
+    products.filter(
+      p=>
+        matchesLinkedFilters(
+          p,
+          field
+        )
+    );
+
+
+  if(
+    field === "category"
+  )
+    return uniqueValues(
+      base,
+      "category"
+    );
+
+
+  if(
+    field === "type"
+  )
+    return uniqueValues(
+      base,
+      "type"
+    );
+
+
+  if(
+    field === "color"
+  )
+    return uniqueValues(
+      base,
+      "color"
+    );
+
+
+  if(
+    field === "size"
+  )
+    return allSizesFrom(
+      base
+    );
+
+
+  return [];
+}
+
+
+
+/* =========================================================
+   ELIMINAR SELECCIONES QUE YA NO SON COMPATIBLES
+   ========================================================= */
+
+function stabilizeSearchSelections(
+  preferredField=null
+){
+
+  for(
+    let pass=0;
+    pass<5;
+    pass++
+  ){
+
+    let changed =
+      false;
+
+
+    SEARCH_FIELDS
+      .forEach(
+        field=>{
+
+          if(
+            field ===
+            preferredField
+          )
+            return;
+
+
+          const id =
+            SEARCH_ELEMENT_BY_FIELD[
+              field
+            ];
+
+
+          const el =
+            document
+              .getElementById(
+                id
+              );
+
+
+          const current =
+            el.value;
+
+
+          if(
+            !current
+          )
+            return;
+
+
+          const valid =
+            optionsForSearchField(
+              field
+            )
+            .map(
+              String
+            );
+
+
+          if(
+            !valid.includes(
+              String(
+                current
+              )
+            )
+          ){
+
+            el.value =
+              "";
+
+
+            changed =
+              true;
+          }
+        }
+      );
+
+
+    if(
+      !changed
+    )
+      break;
+  }
+}
+
+
+
+/* =========================================================
+   ACTUALIZAR TODOS LOS FILTROS
+   ========================================================= */
+
+function refreshLinkedFilters(
+  preferredField=null
+){
+
+  stabilizeSearchSelections(
+    preferredField
+  );
+
+
+  SEARCH_FIELDS
+    .forEach(
+      field=>{
+
+        const id =
+          SEARCH_ELEMENT_BY_FIELD[
+            field
+          ];
+
+
+        const el =
+          document
+            .getElementById(
+              id
+            );
+
+
+        const current =
+          el.value;
+
+
+        const values =
+          optionsForSearchField(
+            field
+          );
+
+
+        const labels = {
+
+          category:
+            "Todas",
+
+          type:
+            "Todos",
+
+          color:
+            "Todos",
+
+          size:
+            "Todas"
+        };
+
+
+        fillSelect(
+          id,
+          values,
+          labels[field],
+          current
+        );
+      }
+    );
+
+
+  renderBrandSuggestions(
+    false
+  );
+}
+
+
+
+/* =========================================================
+   MARCAS DISPONIBLES SEGÚN LOS OTROS FILTROS
+   ========================================================= */
+
+function availableBrands(){
+
+  return uniqueValues(
+
+    products.filter(
+      p=>
+        matchesLinkedFilters(
+          p,
+          "brand"
+        )
+    ),
+
+    "brand"
+  );
+}
+
+
+
+/* =========================================================
+   LISTA DE AUTOCOMPLETADO DE MARCA
+   ========================================================= */
+
+function renderBrandSuggestions(
+  open=false
+){
+
+  const input =
+    document.getElementById(
+      "busMarca"
+    );
+
+
+  const box =
+    document.getElementById(
+      "busMarcaSuggestions"
+    );
+
+
+  const button =
+    document.getElementById(
+      "btnMarcaDropdown"
+    );
+
+
+  if(
+    !input ||
+    !box ||
+    !button
+  )
+    return;
+
+
+  const query =
+    input
+      .value
+      .trim();
+
+
+  const brands =
+    availableBrands()
+      .filter(
+        b=>
+          brandStartsWith(
+            b,
+            query
+          )
+      );
+
+
+  if(
+    !brands.length
+  ){
+
+    box.innerHTML =
+      `
+        <div class="brand-no-results">
+          Sin marcas coincidentes
+        </div>
+      `;
+
+  }else{
+
+    box.innerHTML =
+      brands
+        .map(
+          brand=>
+            `
+              <button
+                type="button"
+                class="brand-option"
+                data-brand="${escapeHtml(brand)}"
+              >
+                ${escapeHtml(brand)}
+              </button>
+            `
+        )
+        .join(
+          ""
+        );
+  }
+
+
+  if(
+    open
+  ){
+
+    box
+      .classList
+      .remove(
+        "hidden"
+      );
+
+
+    button
+      .setAttribute(
+        "aria-expanded",
+        "true"
+      );
+  }
+}
+
+
+
+/* =========================================================
+   CERRAR LISTA DE MARCAS
+   ========================================================= */
+
+function closeBrandSuggestions(){
+
+  const box =
+    document.getElementById(
+      "busMarcaSuggestions"
+    );
+
+
+  const button =
+    document.getElementById(
+      "btnMarcaDropdown"
+    );
+
+
+  if(box)
+    box
+      .classList
+      .add(
+        "hidden"
+      );
+
+
+  if(button)
+    button
+      .setAttribute(
+        "aria-expanded",
+        "false"
+      );
+}
+
+
+
+/* =========================================================
+   INICIALIZAR AUTOCOMPLETADO
+   ========================================================= */
+
+function initBrandAutocomplete(){
+
+  const input =
+    document.getElementById(
+      "busMarca"
+    );
+
+
+  const box =
+    document.getElementById(
+      "busMarcaSuggestions"
+    );
+
+
+  const button =
+    document.getElementById(
+      "btnMarcaDropdown"
+    );
+
+
+  const wrap =
+    document.getElementById(
+      "busMarcaWrap"
+    );
+
+
+
+  input.addEventListener(
+    "input",
+    ()=>{
+
+      refreshLinkedFilters(
+        "brand"
+      );
+
+
+      renderBrandSuggestions(
+        true
+      );
+    }
+  );
+
+
+
+  input.addEventListener(
+    "focus",
+    ()=>{
+
+      renderBrandSuggestions(
+        true
+      );
+    }
+  );
+
+
+
+  button.addEventListener(
+    "click",
+    ()=>{
+
+      const isOpen =
+        !box
+          .classList
+          .contains(
+            "hidden"
+          );
+
+
+      if(
+        isOpen
+      ){
+
+        closeBrandSuggestions();
+
+      }else{
+
+        input.focus();
+
+
+        renderBrandSuggestions(
+          true
+        );
+      }
+    }
+  );
+
+
+
+  box.addEventListener(
+    "click",
+    e=>{
+
+      const option =
+        e.target.closest(
+          "[data-brand]"
+        );
+
+
+      if(
+        !option
+      )
+        return;
+
+
+      input.value =
+        option.dataset.brand;
+
+
+      closeBrandSuggestions();
+
+
+      refreshLinkedFilters(
+        "brand"
+      );
+    }
+  );
+
+
+
+  input.addEventListener(
+    "keydown",
+    e=>{
+
+      if(
+        e.key ===
+        "Escape"
+      ){
+
+        closeBrandSuggestions();
+      }
+
+
+      if(
+        e.key ===
+        "Enter"
+      ){
+
+        const first =
+          box.querySelector(
+            "[data-brand]"
+          );
+
+
+        if(
+          first &&
+          !box
+            .classList
+            .contains(
+              "hidden"
+            )
+        ){
+
+          e.preventDefault();
+
+
+          input.value =
+            first.dataset.brand;
+
+
+          closeBrandSuggestions();
+
+
+          refreshLinkedFilters(
+            "brand"
+          );
+        }
+      }
+    }
+  );
+
+
+
+  document.addEventListener(
+    "click",
+    e=>{
+
+      if(
+        wrap &&
+        !wrap.contains(
+          e.target
+        )
+      ){
+
+        closeBrandSuggestions();
+      }
+    }
+  );
+}
+
+
+
+/* =========================================================
+   INICIALIZAR FILTROS
+   ========================================================= */
+
 function initFilters(){
 
   fillSelect(
     "cobCategoria",
-    unique("category"),
+    uniqueValues(
+      products,
+      "category"
+    ),
     "Seleccionar"
   );
 
 
-  fillSelect(
-    "busMarca",
-    unique("brand"),
-    "Todas"
-  );
+  refreshLinkedFilters();
 
 
-  fillSelect(
-    "busCategoria",
-    unique("category"),
-    "Todas"
-  );
-
-
-  fillSelect(
-    "busTipo",
-    unique("type"),
-    "Todos"
-  );
-
-
-  fillSelect(
-    "busTalla",
-    allSizes(),
-    "Todas"
-  );
-
-
-  updateSearchColors();
+  initBrandAutocomplete();
 }
 
 
+
 /* =========================================================
-   BREADCRUMB
+   NAVEGACIÓN
    ========================================================= */
-function setBreadcrumb(screen){
+
+function setBreadcrumb(
+  screen
+){
 
   const map = {
 
@@ -471,18 +1470,27 @@ function setBreadcrumb(screen){
 
 
   document
-    .getElementById("breadcrumb")
+    .getElementById(
+      "breadcrumb"
+    )
     .textContent =
-      map[screen] || "Stock";
+      map[screen] ||
+      "Stock";
 }
 
 
-/* =========================================================
-   CAMBIO DE PANTALLA
-   ========================================================= */
-function showScreen(id, preserve=true){
 
-  if(!document.getElementById(id))
+function showScreen(
+  id,
+  preserve=true
+){
+
+  if(
+    !document
+      .getElementById(
+        id
+      )
+  )
     return;
 
 
@@ -495,19 +1503,32 @@ function showScreen(id, preserve=true){
 
 
   document
-    .querySelectorAll(".screen")
+    .querySelectorAll(
+      ".screen"
+    )
     .forEach(
       s=>
-        s.classList.remove("active")
+        s
+          .classList
+          .remove(
+            "active"
+          )
     );
 
 
   document
-    .getElementById(id)
-    .classList.add("active");
+    .getElementById(
+      id
+    )
+    .classList
+    .add(
+      "active"
+    );
 
 
-  setBreadcrumb(id);
+  setBreadcrumb(
+    id
+  );
 
 
   window.scrollTo({
@@ -517,45 +1538,66 @@ function showScreen(id, preserve=true){
 }
 
 
+
 /* =========================================================
-   REINICIAR DATOS TEMPORALES
+   REINICIAR
    ========================================================= */
+
 function resetTemporary(){
 
   document
-    .getElementById("cobCategoria")
-    .value = "";
+    .getElementById(
+      "cobCategoria"
+    )
+    .value =
+      "";
 
 
   updateCoverageColors();
 
 
   document
-    .getElementById("coberturaResultado")
-    .classList.add("hidden");
+    .getElementById(
+      "coberturaResultado"
+    )
+    .classList
+    .add(
+      "hidden"
+    );
 
 
   clearSearch();
 
 
-  app.selectedCoverage = null;
+  app.selectedCoverage =
+    null;
 
-  app.selectedProduct = null;
+
+  app.selectedProduct =
+    null;
 }
+
 
 
 /* =========================================================
    TOAST
    ========================================================= */
+
 function toast(msg){
 
   const t =
-    document.getElementById("toast");
+    document.getElementById(
+      "toast"
+    );
 
 
-  t.textContent = msg;
+  t.textContent =
+    msg;
 
-  t.classList.add("show");
+
+  t.classList.add(
+    "show"
+  );
 
 
   clearTimeout(
@@ -565,28 +1607,44 @@ function toast(msg){
 
   toast.timer =
     setTimeout(
-      ()=>t.classList.remove("show"),
+      ()=>{
+
+        t
+          .classList
+          .remove(
+            "show"
+          );
+
+      },
       1900
     );
 }
 
 
+
 /* =========================================================
-   NAVEGACIÓN GENERAL
+   BOTONES GENERALES
    ========================================================= */
+
 document.addEventListener(
   "click",
   e=>{
 
     const go =
-      e.target.closest("[data-go]");
+      e.target.closest(
+        "[data-go]"
+      );
 
 
-    if(go){
+    if(
+      go
+    ){
 
       if(
-        go.dataset.reset === "true"
+        go.dataset.reset ===
+        "true"
       ){
+
         resetTemporary();
       }
 
@@ -599,13 +1657,17 @@ document.addEventListener(
 );
 
 
+
 document
-  .getElementById("btnHome")
+  .getElementById(
+    "btnHome"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       resetTemporary();
+
 
       showScreen(
         "screenInicio"
@@ -614,33 +1676,45 @@ document
   );
 
 
+
 document
-  .getElementById("btnBack")
+  .getElementById(
+    "btnBack"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       if(
-        app.current === "screenInicio"
+        app.current ===
+        "screenInicio"
       )
         return;
 
 
       if(
-        app.current === "screenDetalle"
+        app.current ===
+        "screenDetalle"
       ){
 
         return showScreen(
-          app.previous === "screenCobertura"
-            ? "screenCobertura"
-            : "screenBuscar"
+
+          app.previous ===
+          "screenCobertura"
+            ?
+              "screenCobertura"
+            :
+              "screenBuscar"
         );
       }
 
 
       if(
-        app.current === "screenAjuste" ||
-        app.current === "screenHistorial"
+        app.current ===
+        "screenAjuste" ||
+
+        app.current ===
+        "screenHistorial"
       ){
 
         return showScreen(
@@ -656,36 +1730,54 @@ document
   );
 
 
+
 /* =========================================================
    COBERTURA
    ========================================================= */
+
 document
-  .getElementById("cobCategoria")
+  .getElementById(
+    "cobCategoria"
+  )
   .addEventListener(
     "change",
     updateCoverageColors
   );
 
 
+
 function updateCoverageColors(){
 
   const cat =
     document
-      .getElementById("cobCategoria")
+      .getElementById(
+        "cobCategoria"
+      )
       .value;
 
 
   const color =
     document
-      .getElementById("cobColor");
+      .getElementById(
+        "cobColor"
+      );
 
 
-  if(!cat){
+  if(
+    !cat
+  ){
 
-    color.disabled = true;
+    color.disabled =
+      true;
+
 
     color.innerHTML =
-      '<option value="">Seleccionar categoría primero</option>';
+      `
+        <option value="">
+          Seleccionar categoría primero
+        </option>
+      `;
+
 
     return;
   }
@@ -693,14 +1785,19 @@ function updateCoverageColors(){
 
   const colors = [
     ...new Set(
+
       products
         .filter(
-          p=>p.category===cat
+          p=>
+            p.category ===
+            cat
         )
         .map(
           p=>p.color
         )
-        .filter(Boolean)
+        .filter(
+          Boolean
+        )
     )
   ]
   .sort(
@@ -712,134 +1809,133 @@ function updateCoverageColors(){
   );
 
 
-  color.disabled = false;
+  color.disabled =
+    false;
 
 
   color.innerHTML =
-    '<option value="">Seleccionar</option>' +
+    `
+      <option value="">
+        Seleccionar
+      </option>
+    ` +
 
-    colors.map(
-      c=>
-        `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
-    ).join("");
+    colors
+      .map(
+        c=>
+          `
+            <option value="${escapeHtml(c)}">
+              ${escapeHtml(c)}
+            </option>
+          `
+      )
+      .join(
+        ""
+      );
 }
+
 
 
 /* =========================================================
-   COLORES DEL BUSCADOR
+   EVENTOS DE FILTROS INTERCONECTADOS
    ========================================================= */
-document
-  .getElementById("busCategoria")
-  .addEventListener(
-    "change",
-    updateSearchColors
+
+SEARCH_FIELDS
+  .forEach(
+    field=>{
+
+      const id =
+        SEARCH_ELEMENT_BY_FIELD[
+          field
+        ];
+
+
+      document
+        .getElementById(
+          id
+        )
+        .addEventListener(
+          "change",
+          ()=>{
+
+            refreshLinkedFilters(
+              field
+            );
+          }
+        );
+    }
   );
 
-
-function updateSearchColors(){
-
-  const cat =
-    document
-      .getElementById("busCategoria")
-      .value;
-
-
-  const color =
-    document
-      .getElementById("busColor");
-
-
-  if(!cat){
-
-    color.disabled = true;
-
-    color.innerHTML =
-      '<option value="">Seleccionar categoría primero</option>';
-
-    return;
-  }
-
-
-  const colors = [
-    ...new Set(
-      products
-        .filter(
-          p=>p.category===cat
-        )
-        .map(
-          p=>p.color
-        )
-        .filter(Boolean)
-    )
-  ]
-  .sort(
-    (a,b)=>
-      a.localeCompare(
-        b,
-        "es"
-      )
-  );
-
-
-  color.disabled = false;
-
-
-  color.innerHTML =
-    '<option value="">Todos</option>' +
-
-    colors.map(
-      c=>
-        `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
-    ).join("");
-}
 
 
 /* =========================================================
    LIMPIAR COBERTURA
    ========================================================= */
+
 document
-  .getElementById("btnLimpiarCobertura")
+  .getElementById(
+    "btnLimpiarCobertura"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       document
-        .getElementById("cobCategoria")
-        .value = "";
+        .getElementById(
+          "cobCategoria"
+        )
+        .value =
+          "";
 
 
       updateCoverageColors();
 
 
       document
-        .getElementById("coberturaResultado")
-        .classList.add("hidden");
+        .getElementById(
+          "coberturaResultado"
+        )
+        .classList
+        .add(
+          "hidden"
+        );
     }
   );
+
 
 
 /* =========================================================
    VER COBERTURA
    ========================================================= */
+
 document
-  .getElementById("btnVerCobertura")
+  .getElementById(
+    "btnVerCobertura"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       const cat =
         document
-          .getElementById("cobCategoria")
+          .getElementById(
+            "cobCategoria"
+          )
           .value;
 
 
       const color =
         document
-          .getElementById("cobColor")
+          .getElementById(
+            "cobColor"
+          )
           .value;
 
 
-      if(!cat || !color){
+      if(
+        !cat ||
+        !color
+      ){
 
         return toast(
           "Selecciona categoría y color."
@@ -855,7 +1951,9 @@ document
         );
 
 
-      if(!matches.length){
+      if(
+        !matches.length
+      ){
 
         return toast(
           "No hay productos para esa combinación."
@@ -868,33 +1966,54 @@ document
 
       matches.forEach(
         p=>
-          Object.entries(p.sizes)
-            .forEach(
-              ([s,q])=>
-                sizes[s] =
-                  (sizes[s] || 0) +
-                  Number(q || 0)
-            )
+
+          Object.entries(
+            p.sizes
+          )
+          .forEach(
+            ([s,q])=>{
+
+              sizes[s] =
+                (
+                  sizes[s] ||
+                  0
+                ) +
+                Number(
+                  q || 0
+                );
+            }
+          )
       );
 
 
       const sorted =
-        Object.keys(sizes)
-          .map(Number)
+        Object
+          .keys(
+            sizes
+          )
+          .map(
+            Number
+          )
           .sort(
-            (a,b)=>a-b
+            (a,b)=>
+              a-b
           );
 
 
       const total =
-        Object.values(sizes)
+        Object
+          .values(
+            sizes
+          )
           .reduce(
-            (a,b)=>a+b,
+            (a,b)=>
+              a+b,
             0
           );
 
 
       app.selectedCoverage = {
+
         cat,
         color,
         matches,
@@ -903,109 +2022,139 @@ document
 
 
       document
-        .getElementById("coberturaNombre")
+        .getElementById(
+          "coberturaNombre"
+        )
         .textContent =
           `${cat} · ${color}`;
 
 
       document
-        .getElementById("coberturaTotal")
+        .getElementById(
+          "coberturaTotal"
+        )
         .textContent =
           `${total} ${
-            total===1
-              ? "par"
-              : "pares"
+            total === 1
+              ?
+                "par"
+              :
+                "pares"
           }`;
 
 
       document
-        .getElementById("coberturaTallas")
+        .getElementById(
+          "coberturaTallas"
+        )
         .innerHTML =
-          sorted.map(
-            s=>`
 
-              <div class="size-box ${
-                sizes[s]===0
-                  ? "zero"
-                  : ""
-              }">
+          sorted
+            .map(
+              s=>
+                `
+                  <div class="size-box ${
+                    sizes[s] === 0
+                      ?
+                        "zero"
+                      :
+                        ""
+                  }">
 
-                <span>
-                  Talla ${s}
-                </span>
+                    <span>
+                      Talla ${s}
+                    </span>
 
-                <strong>
-                  ${sizes[s]}
-                </strong>
+                    <strong>
+                      ${sizes[s]}
+                    </strong>
 
-                <span>
-                  ${
-                    sizes[s]===1
-                      ? "par"
-                      : "pares"
-                  }
-                </span>
+                    <span>
+                      ${
+                        sizes[s] === 1
+                          ?
+                            "par"
+                          :
+                            "pares"
+                      }
+                    </span>
 
-              </div>
-
-            `
-          ).join("");
+                  </div>
+                `
+            )
+            .join(
+              ""
+            );
 
 
       const zero =
         sorted.filter(
-          s=>sizes[s]===0
+          s=>
+            sizes[s] === 0
         );
 
 
       const low =
         sorted.filter(
-          s=>sizes[s]===1
+          s=>
+            sizes[s] === 1
         );
 
 
       document
-        .getElementById("coberturaLectura")
+        .getElementById(
+          "coberturaLectura"
+        )
         .textContent =
 
           zero.length
             ?
-
-            `Sin stock en tallas: ${zero.join(", ")}. ${
-              low.length
-                ? `Con solo 1 par: ${low.join(", ")}.`
-                : ""
-            }`
-
+              `Sin stock en tallas: ${zero.join(", ")}. ${
+                low.length
+                  ?
+                    `Con solo 1 par: ${low.join(", ")}.`
+                  :
+                    ""
+              }`
             :
-
           low.length
             ?
-
-            `Todas las tallas tienen cobertura, pero solo queda 1 par en: ${low.join(", ")}.`
-
+              `Todas las tallas tienen cobertura, pero solo queda 1 par en: ${low.join(", ")}.`
             :
-
-            "La combinación tiene cobertura en todas las tallas mostradas.";
-
-
-      document
-        .getElementById("coberturaCodigos")
-        .classList.add("hidden");
+              "La combinación tiene cobertura en todas las tallas mostradas.";
 
 
       document
-        .getElementById("coberturaResultado")
-        .classList.remove("hidden");
+        .getElementById(
+          "coberturaCodigos"
+        )
+        .classList
+        .add(
+          "hidden"
+        );
+
+
+      document
+        .getElementById(
+          "coberturaResultado"
+        )
+        .classList
+        .remove(
+          "hidden"
+        );
     }
   );
 
 
+
 /* =========================================================
-   VER CÓDIGOS DE COBERTURA
+   VER CÓDIGOS COBERTURA
    ========================================================= */
+
 document
-  .getElementById("btnVerCodigosCobertura")
+  .getElementById(
+    "btnVerCodigosCobertura"
+  )
   .addEventListener(
     "click",
     ()=>{
@@ -1020,10 +2169,16 @@ document
 
 
       document
-        .getElementById("coberturaCodigos")
-        .classList.toggle("hidden");
+        .getElementById(
+          "coberturaCodigos"
+        )
+        .classList
+        .toggle(
+          "hidden"
+        );
     }
   );
+
 
 
 function renderCoverageProducts(){
@@ -1035,71 +2190,86 @@ function renderCoverageProducts(){
 
 
   box.innerHTML =
-    app.selectedCoverage.matches
+
+    app
+      .selectedCoverage
+      .matches
       .map(
-        p=>`
+        p=>
+          `
+            <div class="product-row">
 
-          <div class="product-row">
+              <div class="product-thumb">
+                ${productVisual(p,true)}
+              </div>
 
-            <div class="product-thumb">
-              ${productVisual(p,true)}
+              <div>
+
+                <strong>
+                  Código ${escapeHtml(p.code)}
+                </strong>
+
+                <br>
+
+                <small>
+                  <b>
+                    ${escapeHtml(p.brand)}
+                  </b>
+                </small>
+
+                <br>
+
+                <small>
+                  ${escapeHtml(p.type)}
+                </small>
+
+                <br>
+
+                <small>
+                  <b>
+                    Tallas:
+                  </b>
+
+                  ${formatStock(p.sizes)}
+                </small>
+
+              </div>
+
+
+              <button
+                data-open="${escapeHtml(p.code)}"
+                data-origin="coverage"
+              >
+                Ver detalle
+              </button>
+
             </div>
-
-            <div>
-
-              <strong>
-                Código ${escapeHtml(p.code)}
-              </strong>
-
-              <br>
-
-              <small>
-                <b>
-                  ${escapeHtml(p.brand)}
-                </b>
-              </small>
-
-              <br>
-
-              <small>
-                ${escapeHtml(p.type)}
-              </small>
-
-              <br>
-
-              <small>
-                <b>Tallas:</b>
-                ${formatStock(p.sizes)}
-              </small>
-
-            </div>
-
-            <button
-              data-open="${escapeHtml(p.code)}"
-              data-origin="coverage"
-            >
-              Ver detalle
-            </button>
-
-          </div>
-
-        `
+          `
       )
-      .join("");
+      .join(
+        ""
+      );
 }
 
 
+
 document
-  .getElementById("listaCodigosCobertura")
+  .getElementById(
+    "listaCodigosCobertura"
+  )
   .addEventListener(
     "click",
     e=>{
 
       const btn =
-        e.target.closest("[data-open]");
+        e.target.closest(
+          "[data-open]"
+        );
 
 
-      if(btn){
+      if(
+        btn
+      ){
 
         openProduct(
           btn.dataset.open,
@@ -1110,68 +2280,107 @@ document
   );
 
 
+
 /* =========================================================
-   BÚSQUEDA
+   LIMPIAR BÚSQUEDA
    ========================================================= */
+
 function clearSearch(){
 
-  [
-    "busCodigo",
-    "busMarca",
-    "busCategoria",
-    "busTipo",
-    "busColor",
-    "busTalla"
-  ]
-  .forEach(
-    id=>{
-
-      const el =
-        document.getElementById(id);
-
-
-      if(el)
-        el.value = "";
-    }
-  );
+  document
+    .getElementById(
+      "busCodigo"
+    )
+    .value =
+      "";
 
 
   document
-    .getElementById("busIncluirCero")
-    .checked = true;
+    .getElementById(
+      "busMarca"
+    )
+    .value =
+      "";
 
 
-  updateSearchColors();
+  SEARCH_FIELDS
+    .forEach(
+      field=>{
+
+        document
+          .getElementById(
+            SEARCH_ELEMENT_BY_FIELD[
+              field
+            ]
+          )
+          .value =
+            "";
+      }
+    );
 
 
   document
-    .getElementById("buscarResultado")
-    .classList.add("hidden");
+    .getElementById(
+      "busIncluirCero"
+    )
+    .checked =
+      true;
+
+
+  refreshLinkedFilters();
+
+
+  closeBrandSuggestions();
 
 
   document
-    .getElementById("galeriaProductos")
-    .innerHTML = "";
+    .getElementById(
+      "buscarResultado"
+    )
+    .classList
+    .add(
+      "hidden"
+    );
+
+
+  document
+    .getElementById(
+      "galeriaProductos"
+    )
+    .innerHTML =
+      "";
 }
 
 
+
 document
-  .getElementById("btnLimpiarBusqueda")
+  .getElementById(
+    "btnLimpiarBusqueda"
+  )
   .addEventListener(
     "click",
     clearSearch
   );
 
 
+
+/* =========================================================
+   BUSCAR
+   ========================================================= */
+
 document
-  .getElementById("btnBuscar")
+  .getElementById(
+    "btnBuscar"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       const code =
         document
-          .getElementById("busCodigo")
+          .getElementById(
+            "busCodigo"
+          )
           .value
           .trim()
           .toLowerCase();
@@ -1179,8 +2388,14 @@ document
 
       const includeZero =
         document
-          .getElementById("busIncluirCero")
+          .getElementById(
+            "busIncluirCero"
+          )
           .checked;
+
+
+      const f =
+        getSearchState();
 
 
       let result = [
@@ -1188,95 +2403,120 @@ document
       ];
 
 
-      if(code){
+
+      /* Código tiene prioridad */
+      if(
+        code
+      ){
 
         result =
           result.filter(
             p=>
               p.code
                 .toLowerCase()
-                .includes(code)
+                .includes(
+                  code
+                )
           );
 
       }else{
 
-        const filters = {
 
-          brand:
-            document
-              .getElementById("busMarca")
-              .value,
+        if(
+          f.brand
+        ){
 
-          category:
-            document
-              .getElementById("busCategoria")
-              .value,
-
-          type:
-            document
-              .getElementById("busTipo")
-              .value,
-
-          color:
-            document
-              .getElementById("busColor")
-              .value
-        };
+          result =
+            result.filter(
+              p=>
+                brandStartsWith(
+                  p.brand,
+                  f.brand
+                )
+            );
+        }
 
 
-        Object.entries(filters)
-          .forEach(
-            ([k,v])=>{
+        if(
+          f.category
+        ){
 
-              if(v){
-
-                result =
-                  result.filter(
-                    p=>p[k]===v
-                  );
-              }
-            }
-          );
+          result =
+            result.filter(
+              p=>
+                p.category ===
+                f.category
+            );
+        }
 
 
-        const talla =
-          document
-            .getElementById("busTalla")
-            .value;
+        if(
+          f.type
+        ){
+
+          result =
+            result.filter(
+              p=>
+                p.type ===
+                f.type
+            );
+        }
 
 
-        if(talla){
+        if(
+          f.color
+        ){
+
+          result =
+            result.filter(
+              p=>
+                p.color ===
+                f.color
+            );
+        }
+
+
+        /*
+         * Para la búsqueda final,
+         * una talla seleccionada exige
+         * stock mayor a cero.
+         */
+        if(
+          f.size
+        ){
 
           result =
             result.filter(
               p=>
                 Number(
-                  p.sizes[talla] || 0
+                  p.sizes[
+                    f.size
+                  ] ||
+                  0
                 ) > 0
             );
         }
       }
 
 
+
       result =
         result.filter(
-          p=>{
+          p=>
 
-            if(
-              totalStock(p)>0
-            )
-              return true;
-
-
-            return includeZero;
-          }
+            totalStock(p) > 0
+            ||
+            includeZero
         );
+
 
 
       result.sort(
         (a,b)=>
+
           totalStock(b) -
-          totalStock(a) ||
+          totalStock(a)
+          ||
           a.code.localeCompare(
             b.code
           )
@@ -1290,7 +2530,14 @@ document
   );
 
 
-function renderSearch(result){
+
+/* =========================================================
+   MOSTRAR RESULTADOS
+   ========================================================= */
+
+function renderSearch(
+  result
+){
 
   const wrap =
     document.getElementById(
@@ -1305,98 +2552,125 @@ function renderSearch(result){
 
 
   document
-    .getElementById("resultadoCantidad")
+    .getElementById(
+      "resultadoCantidad"
+    )
     .textContent =
       `${result.length} ${
-        result.length===1
-          ? "resultado"
-          : "resultados"
+        result.length === 1
+          ?
+            "resultado"
+          :
+            "resultados"
       }`;
 
 
-  if(!result.length){
+  if(
+    !result.length
+  ){
 
-    gal.innerHTML = `
+    gal.innerHTML =
+      `
+        <div
+          class="info-card"
+          style="grid-column:1/-1"
+        >
 
-      <div
-        class="info-card"
-        style="grid-column:1/-1"
-      >
+          <strong>
+            Sin coincidencias
+          </strong>
 
-        <strong>
-          Sin coincidencias
-        </strong>
+          <p>
+            Prueba con menos filtros
+            o revisa el código.
+          </p>
 
-        <p>
-          Prueba con menos filtros
-          o revisa el código.
-        </p>
-
-      </div>
-    `;
+        </div>
+      `;
 
   }else{
 
+
     gal.innerHTML =
-      result.map(
-        p=>`
 
-          <button
-            class="product-card ${
-              totalStock(p)===0
-                ? "zero-stock"
-                : ""
-            }"
-            data-product="${escapeHtml(p.code)}"
-          >
+      result
+        .map(
+          p=>
+            `
+              <button
+                class="product-card ${
+                  totalStock(p) === 0
+                    ?
+                      "zero-stock"
+                    :
+                      ""
+                }"
+                data-product="${escapeHtml(p.code)}"
+              >
 
-            <div class="shoe-art">
-              ${productVisual(p)}
-            </div>
+                <div class="shoe-art">
+                  ${productVisual(p)}
+                </div>
 
-            <strong>
-              Código ${escapeHtml(p.code)}
-            </strong>
+                <strong>
+                  Código ${escapeHtml(p.code)}
+                </strong>
 
-            <small>
-              <b>
-                ${escapeHtml(p.brand)}
-              </b>
-            </small>
+                <small>
+                  <b>
+                    ${escapeHtml(p.brand)}
+                  </b>
+                </small>
 
-            <small>
-              ${escapeHtml(p.type)}
-            </small>
+                <small>
+                  ${escapeHtml(p.type)}
+                </small>
 
-            <small>
-              <b>Tallas:</b>
-              ${formatStock(p.sizes)}
-            </small>
+                <small>
 
-          </button>
+                  <b>
+                    Tallas:
+                  </b>
 
-        `
-      ).join("");
+                  ${formatStock(p.sizes)}
+
+                </small>
+
+              </button>
+            `
+        )
+        .join(
+          ""
+        );
   }
 
 
-  wrap.classList.remove(
-    "hidden"
-  );
+  wrap
+    .classList
+    .remove(
+      "hidden"
+    );
 }
 
 
+
 document
-  .getElementById("galeriaProductos")
+  .getElementById(
+    "galeriaProductos"
+  )
   .addEventListener(
     "click",
     e=>{
 
       const card =
-        e.target.closest("[data-product]");
+        e.target.closest(
+          "[data-product]"
+        );
 
 
-      if(card){
+      if(
+        card
+      ){
 
         openProduct(
           card.dataset.product,
@@ -1407,14 +2681,20 @@ document
   );
 
 
-function formatStock(sizes){
+
+function formatStock(
+  sizes
+){
 
   const parts =
-    Object.entries(sizes)
+    Object
+      .entries(
+        sizes
+      )
 
       .filter(
         ([,q])=>
-          Number(q)>0
+          Number(q) > 0
       )
 
       .sort(
@@ -1425,21 +2705,30 @@ function formatStock(sizes){
 
       .map(
         ([s,q])=>
-          q===1
-            ? `${s}`
-            : `${s} (${q})`
+
+          q === 1
+            ?
+              `${s}`
+            :
+              `${s} (${q})`
       );
 
 
   return parts.length
-    ? parts.join(", ")
-    : "Sin stock";
+    ?
+      parts.join(
+        ", "
+      )
+    :
+      "Sin stock";
 }
 
 
+
 /* =========================================================
-   DETALLE DEL PRODUCTO
+   DETALLE
    ========================================================= */
+
 function openProduct(
   code,
   origin="screenBuscar"
@@ -1447,121 +2736,159 @@ function openProduct(
 
   const p =
     products.find(
-      x=>x.code===code
+      x=>
+        x.code === code
     );
 
 
-  if(!p)
+  if(
+    !p
+  )
     return;
 
 
-  app.selectedProduct = p;
+  app.selectedProduct =
+    p;
 
-  app.previous = origin;
+
+  app.previous =
+    origin;
 
 
   document
-    .getElementById("detalleArte")
+    .getElementById(
+      "detalleArte"
+    )
     .innerHTML =
-      productVisual(p);
+      productVisual(
+        p
+      );
 
 
   document
-    .getElementById("detalleCodigo")
+    .getElementById(
+      "detalleCodigo"
+    )
     .textContent =
       `Código ${p.code}`;
 
 
   document
-    .getElementById("detalleMarca")
+    .getElementById(
+      "detalleMarca"
+    )
     .textContent =
       p.brand;
 
 
   document
-    .getElementById("detalleCategoria")
+    .getElementById(
+      "detalleCategoria"
+    )
     .textContent =
       p.category;
 
 
   document
-    .getElementById("detalleTipo")
+    .getElementById(
+      "detalleTipo"
+    )
     .textContent =
       p.type;
 
 
   document
-    .getElementById("detalleTotal")
+    .getElementById(
+      "detalleTotal"
+    )
     .textContent =
-      totalStock(p);
+      totalStock(
+        p
+      );
 
 
   document
-    .getElementById("detalleTexto")
+    .getElementById(
+      "detalleTexto"
+    )
     .textContent =
       p.detail ||
       "Sin detalle adicional";
 
 
   document
-    .getElementById("detalleTallas")
+    .getElementById(
+      "detalleTallas"
+    )
     .innerHTML =
 
-      Object.keys(p.sizes)
-        .map(Number)
-        .sort(
-          (a,b)=>a-b
+      Object
+        .keys(
+          p.sizes
         )
         .map(
-          s=>`
-
-            <div
-              class="size-box ${
-                p.sizes[s]===0
-                  ? "zero"
-                  : ""
-              }"
-            >
-
-              <span>
-                Talla ${s}
-              </span>
-
-              <strong>
-                ${p.sizes[s]}
-              </strong>
-
-              <span>
-                ${
-                  p.sizes[s]===1
-                    ? "par"
-                    : "pares"
-                }
-              </span>
-
-            </div>
-
-          `
+          Number
         )
-        .join("");
+        .sort(
+          (a,b)=>
+            a-b
+        )
+        .map(
+          s=>
+            `
+              <div
+                class="size-box ${
+                  p.sizes[s] === 0
+                    ?
+                      "zero"
+                    :
+                      ""
+                }"
+              >
+
+                <span>
+                  Talla ${s}
+                </span>
+
+                <strong>
+                  ${p.sizes[s]}
+                </strong>
+
+                <span>
+                  ${
+                    p.sizes[s] === 1
+                      ?
+                        "par"
+                      :
+                        "pares"
+                  }
+                </span>
+
+              </div>
+            `
+        )
+        .join(
+          ""
+        );
 
 
   const total =
-    totalStock(p);
+    totalStock(
+      p
+    );
 
 
   document
-    .getElementById("detalleEstado")
+    .getElementById(
+      "detalleEstado"
+    )
     .textContent =
 
-      total>0
+      total > 0
         ?
-
-        "Código activo con existencias disponibles."
-
+          "Código activo con existencias disponibles."
         :
-
-        "Código sin existencias. Se muestra porque está activada la opción de incluir stock cero.";
+          "Código sin existencias. Se muestra porque está activada la opción de incluir stock cero.";
 
 
   const btnAjustar =
@@ -1586,7 +2913,9 @@ function openProduct(
 
   btnHistorial
     .classList
-    .remove("hidden");
+    .remove(
+      "hidden"
+    );
 
 
   showScreen(
@@ -1595,29 +2924,39 @@ function openProduct(
 }
 
 
-document
-  .getElementById("btnDetalleVolver")
-  .addEventListener(
-    "click",
-    ()=>
-      showScreen(
-        app.previous ||
-        "screenBuscar"
-      )
-  );
 
-
-/* =========================================================
-   AJUSTE
-   Actualmente desactivado
-   ========================================================= */
 document
-  .getElementById("btnAjustar")
+  .getElementById(
+    "btnDetalleVolver"
+  )
   .addEventListener(
     "click",
     ()=>{
 
-      if(READ_ONLY_MODE){
+      showScreen(
+        app.previous ||
+        "screenBuscar"
+      );
+    }
+  );
+
+
+
+/* =========================================================
+   AJUSTE
+   ========================================================= */
+
+document
+  .getElementById(
+    "btnAjustar"
+  )
+  .addEventListener(
+    "click",
+    ()=>{
+
+      if(
+        READ_ONLY_MODE
+      ){
 
         return toast(
           "Función no disponible en modo solo consulta."
@@ -1629,18 +2968,24 @@ document
         app.selectedProduct;
 
 
-      if(!p)
+      if(
+        !p
+      )
         return;
 
 
       document
-        .getElementById("ajusteTitulo")
+        .getElementById(
+          "ajusteTitulo"
+        )
         .textContent =
           `Ajustar código ${p.code}`;
 
 
       document
-        .getElementById("ajusteOriginal")
+        .getElementById(
+          "ajusteOriginal"
+        )
         .textContent =
           formatAllStock(
             p.sizes
@@ -1649,32 +2994,49 @@ document
 
       const s =
         document
-          .getElementById("ajusteTalla");
+          .getElementById(
+            "ajusteTalla"
+          );
 
 
       s.innerHTML =
-        Object.keys(p.sizes)
-          .map(Number)
+
+        Object
+          .keys(
+            p.sizes
+          )
+          .map(
+            Number
+          )
           .sort(
-            (a,b)=>a-b
+            (a,b)=>
+              a-b
           )
           .map(
             n=>
               `<option>${n}</option>`
           )
-          .join("");
+          .join(
+            ""
+          );
 
 
       s.value =
-        Object.keys(p.sizes)[0];
+        Object
+          .keys(
+            p.sizes
+          )[0];
 
 
       syncAdjustmentQty();
 
 
       document
-        .getElementById("ajusteMotivo")
-        .value = "";
+        .getElementById(
+          "ajusteMotivo"
+        )
+        .value =
+          "";
 
 
       showScreen(
@@ -1684,19 +3046,31 @@ document
   );
 
 
-function formatAllStock(sizes){
 
-  return Object.keys(sizes)
-    .map(Number)
+function formatAllStock(
+  sizes
+){
+
+  return Object
+    .keys(
+      sizes
+    )
+    .map(
+      Number
+    )
     .sort(
-      (a,b)=>a-b
+      (a,b)=>
+        a-b
     )
     .map(
       s=>
         `${s}: ${sizes[s]}`
     )
-    .join(" · ");
+    .join(
+      " · "
+    );
 }
+
 
 
 function syncAdjustmentQty(){
@@ -1707,84 +3081,116 @@ function syncAdjustmentQty(){
 
   const t =
     document
-      .getElementById("ajusteTalla")
+      .getElementById(
+        "ajusteTalla"
+      )
       .value;
 
 
   document
-    .getElementById("ajusteCantidad")
+    .getElementById(
+      "ajusteCantidad"
+    )
     .value =
       Number(
-        p.sizes[t] || 0
+        p.sizes[t] ||
+        0
       );
 }
 
 
+
 document
-  .getElementById("ajusteTalla")
+  .getElementById(
+    "ajusteTalla"
+  )
   .addEventListener(
     "change",
     syncAdjustmentQty
   );
 
 
+
 document
-  .getElementById("ajusteMenos")
+  .getElementById(
+    "ajusteMenos"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       const el =
         document
-          .getElementById("ajusteCantidad");
+          .getElementById(
+            "ajusteCantidad"
+          );
 
 
       el.value =
         Math.max(
           0,
-          Number(el.value||0)-1
+          Number(
+            el.value ||
+            0
+          ) - 1
         );
     }
   );
 
 
+
 document
-  .getElementById("ajusteMas")
+  .getElementById(
+    "ajusteMas"
+  )
   .addEventListener(
     "click",
     ()=>{
 
       const el =
         document
-          .getElementById("ajusteCantidad");
+          .getElementById(
+            "ajusteCantidad"
+          );
 
 
       el.value =
         Number(
-          el.value || 0
+          el.value ||
+          0
         ) + 1;
     }
   );
 
 
-document
-  .getElementById("btnCancelarAjuste")
-  .addEventListener(
-    "click",
-    ()=>
-      showScreen(
-        "screenDetalle"
-      )
-  );
-
 
 document
-  .getElementById("btnGuardarAjuste")
+  .getElementById(
+    "btnCancelarAjuste"
+  )
   .addEventListener(
     "click",
     ()=>{
 
-      if(READ_ONLY_MODE){
+      showScreen(
+        "screenDetalle"
+      );
+    }
+  );
+
+
+
+document
+  .getElementById(
+    "btnGuardarAjuste"
+  )
+  .addEventListener(
+    "click",
+    ()=>{
+
+      if(
+        READ_ONLY_MODE
+      ){
 
         return toast(
           "Los ajustes están deshabilitados en esta versión."
@@ -1798,7 +3204,9 @@ document
 
       const talla =
         document
-          .getElementById("ajusteTalla")
+          .getElementById(
+            "ajusteTalla"
+          )
           .value;
 
 
@@ -1807,27 +3215,34 @@ document
           0,
           Number(
             document
-              .getElementById("ajusteCantidad")
-              .value || 0
+              .getElementById(
+                "ajusteCantidad"
+              )
+              .value ||
+              0
           )
         );
 
 
       const anterior =
         Number(
-          p.sizes[talla] || 0
+          p.sizes[talla] ||
+          0
         );
 
 
       const motivo =
         document
-          .getElementById("ajusteMotivo")
+          .getElementById(
+            "ajusteMotivo"
+          )
           .value
           .trim();
 
 
       if(
-        nueva===anterior
+        nueva ===
+        anterior
       ){
 
         return toast(
@@ -1836,7 +3251,9 @@ document
       }
 
 
-      if(!motivo){
+      if(
+        !motivo
+      ){
 
         return toast(
           "Indica el motivo del ajuste."
@@ -1845,20 +3262,26 @@ document
 
 
       p.history =
-        p.history || [];
+        p.history ||
+        [];
 
 
       p.history.push({
 
-        at:new Date(),
+        at:
+          new Date(),
 
-        size:talla,
+        size:
+          talla,
 
-        before:anterior,
+        before:
+          anterior,
 
-        after:nueva,
+        after:
+          nueva,
 
-        reason:motivo
+        reason:
+          motivo
       });
 
 
@@ -1879,17 +3302,22 @@ document
   );
 
 
+
 /* =========================================================
    HISTORIAL
-   Actualmente desactivado
    ========================================================= */
+
 document
-  .getElementById("btnHistorial")
+  .getElementById(
+    "btnHistorial"
+  )
   .addEventListener(
     "click",
     ()=>{
 
-      if(READ_ONLY_MODE){
+      if(
+        READ_ONLY_MODE
+      ){
 
         return toast(
           "Historial no disponible en esta versión de consulta."
@@ -1907,6 +3335,7 @@ document
   );
 
 
+
 function renderHistory(){
 
   const p =
@@ -1914,133 +3343,169 @@ function renderHistory(){
 
 
   document
-    .getElementById("historialProducto")
+    .getElementById(
+      "historialProducto"
+    )
     .textContent =
       `Código ${p.code} · ${p.brand} · ${p.category} · ${p.color}`;
 
 
   document
-    .getElementById("historialLista")
+    .getElementById(
+      "historialLista"
+    )
     .innerHTML =
 
-      [...(p.history||[])]
-        .reverse()
-        .map(
-          (h,i)=>{
+      [
+        ...(p.history || [])
+      ]
+      .reverse()
+      .map(
+        (h,i)=>{
 
-            const n =
-              (p.history||[]).length-i;
-
-
-            const d =
-              new Date(h.at);
-
-
-            const fecha =
-              d.toLocaleDateString(
-                "es-PE",
-                {
-                  day:"2-digit",
-                  month:"2-digit",
-                  year:"2-digit"
-                }
-              );
+          const n =
+            (p.history || [])
+              .length - i;
 
 
-            const hora =
-              d.toLocaleTimeString(
-                "es-PE",
-                {
-                  hour:"2-digit",
-                  minute:"2-digit"
-                }
-              );
+          const d =
+            new Date(
+              h.at
+            );
 
 
-            return `
+          const fecha =
+            d.toLocaleDateString(
+              "es-PE",
+              {
+                day:
+                  "2-digit",
 
-              <div class="history-card">
+                month:
+                  "2-digit",
 
-                <div class="history-title">
-
-                  Ajuste ${n}
-                  realizado el
-                  ${fecha}
-                  -
-                  ${hora}
-
-                </div>
-
-
-                <div class="history-change">
-
-                  <span>
-                    Talla ${h.size}:
-                    ${h.before}
-                  </span>
-
-                  <span>
-                    →
-                  </span>
-
-                  <span>
-                    ${h.after}
-                  </span>
-
-                </div>
+                year:
+                  "2-digit"
+              }
+            );
 
 
-                <div class="reason">
+          const hora =
+            d.toLocaleTimeString(
+              "es-PE",
+              {
+                hour:
+                  "2-digit",
 
-                  <b>
-                    Motivo:
-                  </b>
+                minute:
+                  "2-digit"
+              }
+            );
 
-                  ${escapeHtml(h.reason)}
 
-                </div>
+          return `
+            <div class="history-card">
+
+              <div class="history-title">
+                Ajuste ${n}
+                realizado el
+                ${fecha}
+                -
+                ${hora}
+              </div>
+
+              <div class="history-change">
+
+                <span>
+                  Talla ${h.size}:
+                  ${h.before}
+                </span>
+
+                <span>
+                  →
+                </span>
+
+                <span>
+                  ${h.after}
+                </span>
 
               </div>
 
-            `;
-          }
-        )
-        .join("");
+              <div class="reason">
+
+                <b>
+                  Motivo:
+                </b>
+
+                ${escapeHtml(h.reason)}
+
+              </div>
+
+            </div>
+          `;
+        }
+      )
+      .join(
+        ""
+      );
 }
 
 
+
 document
-  .getElementById("btnHistorialVolver")
+  .getElementById(
+    "btnHistorialVolver"
+  )
   .addEventListener(
     "click",
-    ()=>
+    ()=>{
+
       showScreen(
         "screenDetalle"
-      )
+      );
+    }
   );
 
 
+
 /* =========================================================
-   PROTECCIÓN DE TEXTO HTML
+   SEGURIDAD HTML
    ========================================================= */
+
 function escapeHtml(s){
 
-  return String(s).replace(
+  return String(
+    s
+  )
+  .replace(
     /[&<>"']/g,
     c=>({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
+
+      "&":
+        "&amp;",
+
+      "<":
+        "&lt;",
+
+      ">":
+        "&gt;",
+
+      '"':
+        "&quot;",
+
+      "'":
+        "&#039;"
+
     }[c])
   );
 }
 
 
+
 /* =========================================================
-   INICIO DE LA APLICACIÓN
+   INICIO
    ========================================================= */
+
 setBreadcrumb(
   "screenInicio"
 );
@@ -2065,10 +3530,6 @@ loadStockData()
       );
 
 
-      /*
-       * La API actual utiliza "actualizado".
-       * También aceptamos "generatedAt".
-       */
       const fechaAPI =
         payload.actualizado ||
         payload.generatedAt ||
@@ -2077,8 +3538,12 @@ loadStockData()
 
       const ts =
         fechaAPI
-          ? new Date(fechaAPI)
-          : null;
+          ?
+            new Date(
+              fechaAPI
+            )
+          :
+            null;
 
 
       if(
@@ -2089,7 +3554,9 @@ loadStockData()
       ){
 
         document
-          .getElementById("dataStatus")
+          .getElementById(
+            "dataStatus"
+          )
           .title =
             `Última lectura: ${
               ts.toLocaleString(
@@ -2103,7 +3570,9 @@ loadStockData()
   .catch(
     err=>{
 
-      console.error(err);
+      console.error(
+        err
+      );
 
 
       setDataStatus(
