@@ -7,8 +7,70 @@ const STOCK_LOAD_TIMEOUT_MS = 15000;
 
 
 /* =========================================================
+   IMÁGENES DE GOOGLE DRIVE
+
+   Convierte enlaces como:
+
+   https://drive.google.com/uc?id=ARCHIVO
+
+   https://drive.google.com/file/d/ARCHIVO/view
+
+   https://drive.google.com/open?id=ARCHIVO
+
+   a:
+
+   https://drive.google.com/thumbnail?id=ARCHIVO&sz=w1000
+   ========================================================= */
+function normalizeImageUrl(url){
+
+  const value = String(url || "").trim();
+
+  if(!value) return "";
+
+  let match = null;
+
+  // Formato:
+  // https://drive.google.com/uc?id=FILE_ID
+  match = value.match(
+    /drive\.google\.com\/uc\?(?:[^#]*&)?id=([^&]+)/i
+  );
+
+  if(match){
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+  }
+
+
+  // Formato:
+  // https://drive.google.com/file/d/FILE_ID/view
+  match = value.match(
+    /drive\.google\.com\/file\/d\/([^/]+)/i
+  );
+
+  if(match){
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+  }
+
+
+  // Formato:
+  // https://drive.google.com/open?id=FILE_ID
+  match = value.match(
+    /drive\.google\.com\/open\?(?:[^#]*&)?id=([^&]+)/i
+  );
+
+  if(match){
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+  }
+
+
+  // Si no es un enlace de Drive conocido,
+  // se mantiene la URL original.
+  return value;
+}
+
+
+/* =========================================================
    NORMALIZACIÓN DE PRODUCTOS
-   Acepta tanto nombres en inglés como en español.
+   Acepta nombres en español o inglés.
    ========================================================= */
 function normalizeProduct(raw){
 
@@ -20,45 +82,50 @@ function normalizeProduct(raw){
   const sizes = {};
 
   Object.entries(sourceSizes).forEach(([s,q])=>{
+
     const n = Number(
       String(q ?? 0).replace(",",".")
     );
 
     sizes[String(Number(s))] =
-      Number.isFinite(n) ? n : 0;
+      Number.isFinite(n)
+        ? n
+        : 0;
   });
 
+
   return {
-    code: String(
+
+    code:String(
       raw.code ??
       raw.codigo ??
       ""
     ).trim(),
 
-    brand: String(
+    brand:String(
       raw.brand ??
       raw.marca ??
       ""
     ).trim(),
 
-    category: String(
+    category:String(
       raw.category ??
       raw.categoria ??
       ""
     ).trim(),
 
-    type: String(
+    type:String(
       raw.type ??
       raw.tipo ??
       ""
     ).trim(),
 
-    color: String(
+    color:String(
       raw.color ??
       ""
     ).trim(),
 
-    detail: String(
+    detail:String(
       raw.detail ??
       raw.detalle ??
       ""
@@ -66,13 +133,13 @@ function normalizeProduct(raw){
 
     sizes,
 
-    imageUrl: String(
+    imageUrl:normalizeImageUrl(
       raw.imageUrl ??
       raw.imagen ??
       ""
-    ).trim(),
+    ),
 
-    icon: "👟"
+    icon:"👟"
   };
 }
 
@@ -81,50 +148,62 @@ function normalizeProduct(raw){
    ESTADO DE CONEXIÓN
    ========================================================= */
 function setDataStatus(message, kind="info"){
-  const el=document.getElementById("dataStatus");
+
+  const el =
+    document.getElementById("dataStatus");
 
   if(!el) return;
 
-  el.textContent=message;
-  el.dataset.kind=kind;
+  el.textContent = message;
+  el.dataset.kind = kind;
 }
 
 
 /* =========================================================
    CARGA DE STOCK DESDE GOOGLE APPS SCRIPT
-   Utiliza JSONP.
+   JSONP
    ========================================================= */
 function loadStockData(){
 
   return new Promise((resolve,reject)=>{
 
     if(!STOCK_API_URL){
+
       reject(
         new Error(
           "Falta configurar la URL de la API de Stock."
         )
       );
+
       return;
     }
+
 
     const callbackName =
       `__stockCallback_${Date.now()}`;
 
+
     const script =
       document.createElement("script");
 
-    let finished=false;
 
-    const cleanup=()=>{
+    let finished = false;
+
+
+    const cleanup = ()=>{
+
       delete window[callbackName];
+
       script.remove();
     };
 
-    const timer=setTimeout(()=>{
+
+    const timer = setTimeout(()=>{
 
       if(finished) return;
 
-      finished=true;
+      finished = true;
+
       cleanup();
 
       reject(
@@ -133,29 +212,20 @@ function loadStockData(){
         )
       );
 
-    },STOCK_LOAD_TIMEOUT_MS);
+    }, STOCK_LOAD_TIMEOUT_MS);
 
 
-    window[callbackName]=(payload)=>{
+    window[callbackName] = (payload)=>{
 
       if(finished) return;
 
-      finished=true;
+      finished = true;
 
       clearTimeout(timer);
 
       cleanup();
 
 
-      /*
-       * La API actual devuelve:
-       *
-       * productos
-       *
-       * pero dejamos compatibilidad
-       * con "products" por si más adelante
-       * cambia la API.
-       */
       const rows =
         Array.isArray(payload?.products)
           ? payload.products
@@ -191,11 +261,11 @@ function loadStockData(){
     };
 
 
-    script.onerror=()=>{
+    script.onerror = ()=>{
 
       if(finished) return;
 
-      finished=true;
+      finished = true;
 
       clearTimeout(timer);
 
@@ -227,7 +297,7 @@ function loadStockData(){
 
 
 /* =========================================================
-   REPRESENTACIÓN VISUAL DEL PRODUCTO
+   IMAGEN DEL PRODUCTO
    ========================================================= */
 function productVisual(p, thumb=false){
 
@@ -235,7 +305,7 @@ function productVisual(p, thumb=false){
 
     return `
       <img
-        class="product-image${thumb?" thumb":""}"
+        class="product-image${thumb ? " thumb" : ""}"
         src="${escapeHtml(p.imageUrl)}"
         alt="Código ${escapeHtml(p.code)}"
         loading="lazy"
@@ -249,22 +319,26 @@ function productVisual(p, thumb=false){
 
 
 /* =========================================================
-   ESTADO GENERAL DE LA APP
+   ESTADO DE LA APP
    ========================================================= */
 const app = {
+
   current:"screenInicio",
+
   previous:"screenInicio",
+
   selectedProduct:null,
+
   selectedCoverage:null
 };
 
 
 /* =========================================================
-   UTILIDADES DE STOCK
+   FUNCIONES GENERALES
    ========================================================= */
 function totalStock(p){
-  return Object
-    .values(p.sizes)
+
+  return Object.values(p.sizes)
     .reduce(
       (a,b)=>a+Number(b||0),
       0
@@ -298,33 +372,35 @@ function allSizes(){
     ...new Set(
       products.flatMap(
         p=>
-          Object
-            .keys(p.sizes)
+          Object.keys(p.sizes)
             .map(Number)
       )
     )
   ]
-  .sort((a,b)=>a-b);
+  .sort(
+    (a,b)=>a-b
+  );
 }
 
 
 function fillSelect(id, values, first){
 
-  const el=
+  const el =
     document.getElementById(id);
 
-  el.innerHTML=
-    `<option value="">${first}</option>`+
-    values
-      .map(
-        v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`
-      )
-      .join("");
+
+  el.innerHTML =
+    `<option value="">${first}</option>` +
+
+    values.map(
+      v=>
+        `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`
+    ).join("");
 }
 
 
 /* =========================================================
-   FILTROS INICIALES
+   FILTROS
    ========================================================= */
 function initFilters(){
 
@@ -334,11 +410,13 @@ function initFilters(){
     "Seleccionar"
   );
 
+
   fillSelect(
     "busMarca",
     unique("brand"),
     "Todas"
   );
+
 
   fillSelect(
     "busCategoria",
@@ -346,11 +424,13 @@ function initFilters(){
     "Todas"
   );
 
+
   fillSelect(
     "busTipo",
     unique("type"),
     "Todos"
   );
+
 
   fillSelect(
     "busTalla",
@@ -358,16 +438,17 @@ function initFilters(){
     "Todas"
   );
 
+
   updateSearchColors();
 }
 
 
 /* =========================================================
-   NAVEGACIÓN
+   BREADCRUMB
    ========================================================= */
 function setBreadcrumb(screen){
 
-  const map={
+  const map = {
 
     screenInicio:
       "Inicio > Stock",
@@ -388,6 +469,7 @@ function setBreadcrumb(screen){
       "Stock > Detalle > Historial"
   };
 
+
   document
     .getElementById("breadcrumb")
     .textContent =
@@ -395,28 +477,38 @@ function setBreadcrumb(screen){
 }
 
 
+/* =========================================================
+   CAMBIO DE PANTALLA
+   ========================================================= */
 function showScreen(id, preserve=true){
 
   if(!document.getElementById(id))
     return;
 
+
   app.previous =
     app.current;
+
 
   app.current =
     id;
 
+
   document
     .querySelectorAll(".screen")
     .forEach(
-      s=>s.classList.remove("active")
+      s=>
+        s.classList.remove("active")
     );
+
 
   document
     .getElementById(id)
     .classList.add("active");
 
+
   setBreadcrumb(id);
+
 
   window.scrollTo({
     top:0,
@@ -425,24 +517,30 @@ function showScreen(id, preserve=true){
 }
 
 
+/* =========================================================
+   REINICIAR DATOS TEMPORALES
+   ========================================================= */
 function resetTemporary(){
 
   document
     .getElementById("cobCategoria")
-    .value="";
+    .value = "";
+
 
   updateCoverageColors();
 
+
   document
-    .getElementById(
-      "coberturaResultado"
-    )
+    .getElementById("coberturaResultado")
     .classList.add("hidden");
+
 
   clearSearch();
 
-  app.selectedCoverage=null;
-  app.selectedProduct=null;
+
+  app.selectedCoverage = null;
+
+  app.selectedProduct = null;
 }
 
 
@@ -451,14 +549,19 @@ function resetTemporary(){
    ========================================================= */
 function toast(msg){
 
-  const t=
+  const t =
     document.getElementById("toast");
 
-  t.textContent=msg;
+
+  t.textContent = msg;
 
   t.classList.add("show");
 
-  clearTimeout(toast.timer);
+
+  clearTimeout(
+    toast.timer
+  );
+
 
   toast.timer =
     setTimeout(
@@ -469,7 +572,7 @@ function toast(msg){
 
 
 /* =========================================================
-   BOTONES GENERALES
+   NAVEGACIÓN GENERAL
    ========================================================= */
 document.addEventListener(
   "click",
@@ -478,13 +581,15 @@ document.addEventListener(
     const go =
       e.target.closest("[data-go]");
 
+
     if(go){
 
       if(
-        go.dataset.reset==="true"
+        go.dataset.reset === "true"
       ){
         resetTemporary();
       }
+
 
       showScreen(
         go.dataset.go
@@ -499,8 +604,12 @@ document
   .addEventListener(
     "click",
     ()=>{
+
       resetTemporary();
-      showScreen("screenInicio");
+
+      showScreen(
+        "screenInicio"
+      );
     }
   );
 
@@ -512,26 +621,33 @@ document
     ()=>{
 
       if(
-        app.current==="screenInicio"
+        app.current === "screenInicio"
       )
         return;
 
+
       if(
-        app.current==="screenDetalle"
-      )
+        app.current === "screenDetalle"
+      ){
+
         return showScreen(
-          app.previous==="screenCobertura"
+          app.previous === "screenCobertura"
             ? "screenCobertura"
             : "screenBuscar"
         );
+      }
+
 
       if(
-        app.current==="screenAjuste" ||
-        app.current==="screenHistorial"
-      )
+        app.current === "screenAjuste" ||
+        app.current === "screenHistorial"
+      ){
+
         return showScreen(
           "screenDetalle"
         );
+      }
+
 
       showScreen(
         "screenInicio"
@@ -558,6 +674,7 @@ function updateCoverageColors(){
       .getElementById("cobCategoria")
       .value;
 
+
   const color =
     document
       .getElementById("cobColor");
@@ -565,16 +682,16 @@ function updateCoverageColors(){
 
   if(!cat){
 
-    color.disabled=true;
+    color.disabled = true;
 
-    color.innerHTML=
+    color.innerHTML =
       '<option value="">Seleccionar categoría primero</option>';
 
     return;
   }
 
 
-  const colors=[
+  const colors = [
     ...new Set(
       products
         .filter(
@@ -595,20 +712,21 @@ function updateCoverageColors(){
   );
 
 
-  color.disabled=false;
+  color.disabled = false;
 
-  color.innerHTML=
-    '<option value="">Seleccionar</option>'+
-    colors
-      .map(
-        c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
-      )
-      .join("");
+
+  color.innerHTML =
+    '<option value="">Seleccionar</option>' +
+
+    colors.map(
+      c=>
+        `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join("");
 }
 
 
 /* =========================================================
-   COLORES DE BÚSQUEDA
+   COLORES DEL BUSCADOR
    ========================================================= */
 document
   .getElementById("busCategoria")
@@ -625,6 +743,7 @@ function updateSearchColors(){
       .getElementById("busCategoria")
       .value;
 
+
   const color =
     document
       .getElementById("busColor");
@@ -632,16 +751,16 @@ function updateSearchColors(){
 
   if(!cat){
 
-    color.disabled=true;
+    color.disabled = true;
 
-    color.innerHTML=
+    color.innerHTML =
       '<option value="">Seleccionar categoría primero</option>';
 
     return;
   }
 
 
-  const colors=[
+  const colors = [
     ...new Set(
       products
         .filter(
@@ -662,15 +781,16 @@ function updateSearchColors(){
   );
 
 
-  color.disabled=false;
+  color.disabled = false;
 
-  color.innerHTML=
-    '<option value="">Todos</option>'+
-    colors
-      .map(
-        c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
-      )
-      .join("");
+
+  color.innerHTML =
+    '<option value="">Todos</option>' +
+
+    colors.map(
+      c=>
+        `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join("");
 }
 
 
@@ -678,28 +798,22 @@ function updateSearchColors(){
    LIMPIAR COBERTURA
    ========================================================= */
 document
-  .getElementById(
-    "btnLimpiarCobertura"
-  )
+  .getElementById("btnLimpiarCobertura")
   .addEventListener(
     "click",
     ()=>{
 
       document
-        .getElementById(
-          "cobCategoria"
-        )
-        .value="";
+        .getElementById("cobCategoria")
+        .value = "";
+
 
       updateCoverageColors();
 
+
       document
-        .getElementById(
-          "coberturaResultado"
-        )
-        .classList.add(
-          "hidden"
-        );
+        .getElementById("coberturaResultado")
+        .classList.add("hidden");
     }
   );
 
@@ -708,25 +822,20 @@ document
    VER COBERTURA
    ========================================================= */
 document
-  .getElementById(
-    "btnVerCobertura"
-  )
+  .getElementById("btnVerCobertura")
   .addEventListener(
     "click",
     ()=>{
 
       const cat =
         document
-          .getElementById(
-            "cobCategoria"
-          )
+          .getElementById("cobCategoria")
           .value;
+
 
       const color =
         document
-          .getElementById(
-            "cobColor"
-          )
+          .getElementById("cobColor")
           .value;
 
 
@@ -741,8 +850,8 @@ document
       const matches =
         products.filter(
           p=>
-            p.category===cat &&
-            p.color===color
+            p.category === cat &&
+            p.color === color
         );
 
 
@@ -754,25 +863,23 @@ document
       }
 
 
-      const sizes={};
+      const sizes = {};
 
 
       matches.forEach(
         p=>
-          Object
-            .entries(p.sizes)
+          Object.entries(p.sizes)
             .forEach(
               ([s,q])=>
-                sizes[s]=
-                  (sizes[s]||0)+
-                  Number(q||0)
+                sizes[s] =
+                  (sizes[s] || 0) +
+                  Number(q || 0)
             )
       );
 
 
       const sorted =
-        Object
-          .keys(sizes)
+        Object.keys(sizes)
           .map(Number)
           .sort(
             (a,b)=>a-b
@@ -780,15 +887,14 @@ document
 
 
       const total =
-        Object
-          .values(sizes)
+        Object.values(sizes)
           .reduce(
             (a,b)=>a+b,
             0
           );
 
 
-      app.selectedCoverage={
+      app.selectedCoverage = {
         cat,
         color,
         matches,
@@ -797,18 +903,14 @@ document
 
 
       document
-        .getElementById(
-          "coberturaNombre"
-        )
-        .textContent=
+        .getElementById("coberturaNombre")
+        .textContent =
           `${cat} · ${color}`;
 
 
       document
-        .getElementById(
-          "coberturaTotal"
-        )
-        .textContent=
+        .getElementById("coberturaTotal")
+        .textContent =
           `${total} ${
             total===1
               ? "par"
@@ -817,23 +919,25 @@ document
 
 
       document
-        .getElementById(
-          "coberturaTallas"
-        )
-        .innerHTML=
+        .getElementById("coberturaTallas")
+        .innerHTML =
           sorted.map(
             s=>`
+
               <div class="size-box ${
                 sizes[s]===0
                   ? "zero"
                   : ""
               }">
+
                 <span>
                   Talla ${s}
                 </span>
+
                 <strong>
                   ${sizes[s]}
                 </strong>
+
                 <span>
                   ${
                     sizes[s]===1
@@ -841,70 +945,67 @@ document
                       : "pares"
                   }
                 </span>
+
               </div>
+
             `
           ).join("");
 
 
-      const zero=
+      const zero =
         sorted.filter(
           s=>sizes[s]===0
         );
 
 
-      const low=
+      const low =
         sorted.filter(
           s=>sizes[s]===1
         );
 
 
       document
-        .getElementById(
-          "coberturaLectura"
-        )
-        .textContent=
+        .getElementById("coberturaLectura")
+        .textContent =
+
           zero.length
             ?
-              `Sin stock en tallas: ${zero.join(", ")}. ${
-                low.length
-                  ? `Con solo 1 par: ${low.join(", ")}.`
-                  : ""
-              }`
+
+            `Sin stock en tallas: ${zero.join(", ")}. ${
+              low.length
+                ? `Con solo 1 par: ${low.join(", ")}.`
+                : ""
+            }`
+
             :
+
           low.length
             ?
-              `Todas las tallas tienen cobertura, pero solo queda 1 par en: ${low.join(", ")}.`
+
+            `Todas las tallas tienen cobertura, pero solo queda 1 par en: ${low.join(", ")}.`
+
             :
-              "La combinación tiene cobertura en todas las tallas mostradas.";
+
+            "La combinación tiene cobertura en todas las tallas mostradas.";
 
 
       document
-        .getElementById(
-          "coberturaCodigos"
-        )
-        .classList.add(
-          "hidden"
-        );
+        .getElementById("coberturaCodigos")
+        .classList.add("hidden");
 
 
       document
-        .getElementById(
-          "coberturaResultado"
-        )
-        .classList.remove(
-          "hidden"
-        );
+        .getElementById("coberturaResultado")
+        .classList.remove("hidden");
     }
   );
 
 
 /* =========================================================
-   MOSTRAR CÓDIGOS DE COBERTURA
+   VER CÓDIGOS DE COBERTURA
    ========================================================= */
 document
-  .getElementById(
-    "btnVerCodigosCobertura"
-  )
+  .getElementById("btnVerCodigosCobertura")
   .addEventListener(
     "click",
     ()=>{
@@ -914,31 +1015,30 @@ document
       )
         return;
 
+
       renderCoverageProducts();
 
+
       document
-        .getElementById(
-          "coberturaCodigos"
-        )
-        .classList.toggle(
-          "hidden"
-        );
+        .getElementById("coberturaCodigos")
+        .classList.toggle("hidden");
     }
   );
 
 
 function renderCoverageProducts(){
 
-  const box=
+  const box =
     document.getElementById(
       "listaCodigosCobertura"
     );
 
 
-  box.innerHTML=
+  box.innerHTML =
     app.selectedCoverage.matches
       .map(
         p=>`
+
           <div class="product-row">
 
             <div class="product-thumb">
@@ -950,16 +1050,21 @@ function renderCoverageProducts(){
               <strong>
                 Código ${escapeHtml(p.code)}
               </strong>
+
               <br>
 
               <small>
-                <b>${escapeHtml(p.brand)}</b>
+                <b>
+                  ${escapeHtml(p.brand)}
+                </b>
               </small>
+
               <br>
 
               <small>
                 ${escapeHtml(p.type)}
               </small>
+
               <br>
 
               <small>
@@ -977,6 +1082,7 @@ function renderCoverageProducts(){
             </button>
 
           </div>
+
         `
       )
       .join("");
@@ -984,17 +1090,14 @@ function renderCoverageProducts(){
 
 
 document
-  .getElementById(
-    "listaCodigosCobertura"
-  )
+  .getElementById("listaCodigosCobertura")
   .addEventListener(
     "click",
     e=>{
 
-      const btn=
-        e.target.closest(
-          "[data-open]"
-        );
+      const btn =
+        e.target.closest("[data-open]");
+
 
       if(btn){
 
@@ -1023,46 +1126,37 @@ function clearSearch(){
   .forEach(
     id=>{
 
-      const el=
+      const el =
         document.getElementById(id);
 
+
       if(el)
-        el.value="";
+        el.value = "";
     }
   );
 
 
   document
-    .getElementById(
-      "busIncluirCero"
-    )
-    .checked=true;
+    .getElementById("busIncluirCero")
+    .checked = true;
 
 
   updateSearchColors();
 
 
   document
-    .getElementById(
-      "buscarResultado"
-    )
-    .classList.add(
-      "hidden"
-    );
+    .getElementById("buscarResultado")
+    .classList.add("hidden");
 
 
   document
-    .getElementById(
-      "galeriaProductos"
-    )
-    .innerHTML="";
+    .getElementById("galeriaProductos")
+    .innerHTML = "";
 }
 
 
 document
-  .getElementById(
-    "btnLimpiarBusqueda"
-  )
+  .getElementById("btnLimpiarBusqueda")
   .addEventListener(
     "click",
     clearSearch
@@ -1070,39 +1164,33 @@ document
 
 
 document
-  .getElementById(
-    "btnBuscar"
-  )
+  .getElementById("btnBuscar")
   .addEventListener(
     "click",
     ()=>{
 
-      const code=
+      const code =
         document
-          .getElementById(
-            "busCodigo"
-          )
+          .getElementById("busCodigo")
           .value
           .trim()
           .toLowerCase();
 
 
-      const includeZero=
+      const includeZero =
         document
-          .getElementById(
-            "busIncluirCero"
-          )
+          .getElementById("busIncluirCero")
           .checked;
 
 
-      let result=[
+      let result = [
         ...products
       ];
 
 
       if(code){
 
-        result=
+        result =
           result.filter(
             p=>
               p.code
@@ -1112,46 +1200,37 @@ document
 
       }else{
 
-        const filters={
+        const filters = {
 
           brand:
             document
-              .getElementById(
-                "busMarca"
-              )
+              .getElementById("busMarca")
               .value,
 
           category:
             document
-              .getElementById(
-                "busCategoria"
-              )
+              .getElementById("busCategoria")
               .value,
 
           type:
             document
-              .getElementById(
-                "busTipo"
-              )
+              .getElementById("busTipo")
               .value,
 
           color:
             document
-              .getElementById(
-                "busColor"
-              )
+              .getElementById("busColor")
               .value
         };
 
 
-        Object
-          .entries(filters)
+        Object.entries(filters)
           .forEach(
             ([k,v])=>{
 
               if(v){
 
-                result=
+                result =
                   result.filter(
                     p=>p[k]===v
                   );
@@ -1160,17 +1239,15 @@ document
           );
 
 
-        const talla=
+        const talla =
           document
-            .getElementById(
-              "busTalla"
-            )
+            .getElementById("busTalla")
             .value;
 
 
         if(talla){
 
-          result=
+          result =
             result.filter(
               p=>
                 Number(
@@ -1181,12 +1258,15 @@ document
       }
 
 
-      result=
+      result =
         result.filter(
           p=>{
 
-            if(totalStock(p)>0)
+            if(
+              totalStock(p)>0
+            )
               return true;
+
 
             return includeZero;
           }
@@ -1195,7 +1275,7 @@ document
 
       result.sort(
         (a,b)=>
-          totalStock(b)-
+          totalStock(b) -
           totalStock(a) ||
           a.code.localeCompare(
             b.code
@@ -1203,29 +1283,30 @@ document
       );
 
 
-      renderSearch(result);
+      renderSearch(
+        result
+      );
     }
   );
 
 
 function renderSearch(result){
 
-  const wrap=
+  const wrap =
     document.getElementById(
       "buscarResultado"
     );
 
-  const gal=
+
+  const gal =
     document.getElementById(
       "galeriaProductos"
     );
 
 
   document
-    .getElementById(
-      "resultadoCantidad"
-    )
-    .textContent=
+    .getElementById("resultadoCantidad")
+    .textContent =
       `${result.length} ${
         result.length===1
           ? "resultado"
@@ -1235,66 +1316,67 @@ function renderSearch(result){
 
   if(!result.length){
 
-    gal.innerHTML=
-      `
-        <div
-          class="info-card"
-          style="grid-column:1/-1"
-        >
-          <strong>
-            Sin coincidencias
-          </strong>
+    gal.innerHTML = `
 
-          <p>
-            Prueba con menos filtros
-            o revisa el código.
-          </p>
+      <div
+        class="info-card"
+        style="grid-column:1/-1"
+      >
 
-        </div>
-      `;
+        <strong>
+          Sin coincidencias
+        </strong>
+
+        <p>
+          Prueba con menos filtros
+          o revisa el código.
+        </p>
+
+      </div>
+    `;
 
   }else{
 
-    gal.innerHTML=
-      result
-        .map(
-          p=>`
+    gal.innerHTML =
+      result.map(
+        p=>`
 
-            <button
-              class="product-card ${
-                totalStock(p)===0
-                  ? "zero-stock"
-                  : ""
-              }"
-              data-product="${escapeHtml(p.code)}"
-            >
+          <button
+            class="product-card ${
+              totalStock(p)===0
+                ? "zero-stock"
+                : ""
+            }"
+            data-product="${escapeHtml(p.code)}"
+          >
 
-              <div class="shoe-art">
-                ${productVisual(p)}
-              </div>
+            <div class="shoe-art">
+              ${productVisual(p)}
+            </div>
 
-              <strong>
-                Código ${escapeHtml(p.code)}
-              </strong>
+            <strong>
+              Código ${escapeHtml(p.code)}
+            </strong>
 
-              <small>
-                <b>${escapeHtml(p.brand)}</b>
-              </small>
+            <small>
+              <b>
+                ${escapeHtml(p.brand)}
+              </b>
+            </small>
 
-              <small>
-                ${escapeHtml(p.type)}
-              </small>
+            <small>
+              ${escapeHtml(p.type)}
+            </small>
 
-              <small>
-                <b>Tallas:</b>
-                ${formatStock(p.sizes)}
-              </small>
+            <small>
+              <b>Tallas:</b>
+              ${formatStock(p.sizes)}
+            </small>
 
-            </button>
+          </button>
 
-          `
-        )
-        .join("");
+        `
+      ).join("");
   }
 
 
@@ -1305,17 +1387,14 @@ function renderSearch(result){
 
 
 document
-  .getElementById(
-    "galeriaProductos"
-  )
+  .getElementById("galeriaProductos")
   .addEventListener(
     "click",
     e=>{
 
-      const card=
-        e.target.closest(
-          "[data-product]"
-        );
+      const card =
+        e.target.closest("[data-product]");
+
 
       if(card){
 
@@ -1330,9 +1409,8 @@ document
 
 function formatStock(sizes){
 
-  const parts=
-    Object
-      .entries(sizes)
+  const parts =
+    Object.entries(sizes)
 
       .filter(
         ([,q])=>
@@ -1341,7 +1419,7 @@ function formatStock(sizes){
 
       .sort(
         (a,b)=>
-          Number(a[0])-
+          Number(a[0]) -
           Number(b[0])
       )
 
@@ -1360,14 +1438,14 @@ function formatStock(sizes){
 
 
 /* =========================================================
-   DETALLE
+   DETALLE DEL PRODUCTO
    ========================================================= */
 function openProduct(
   code,
   origin="screenBuscar"
 ){
 
-  const p=
+  const p =
     products.find(
       x=>x.code===code
     );
@@ -1377,74 +1455,59 @@ function openProduct(
     return;
 
 
-  app.selectedProduct=p;
-  app.previous=origin;
+  app.selectedProduct = p;
+
+  app.previous = origin;
 
 
   document
-    .getElementById(
-      "detalleArte"
-    )
-    .innerHTML=
+    .getElementById("detalleArte")
+    .innerHTML =
       productVisual(p);
 
 
   document
-    .getElementById(
-      "detalleCodigo"
-    )
-    .textContent=
+    .getElementById("detalleCodigo")
+    .textContent =
       `Código ${p.code}`;
 
 
   document
-    .getElementById(
-      "detalleMarca"
-    )
-    .textContent=
+    .getElementById("detalleMarca")
+    .textContent =
       p.brand;
 
 
   document
-    .getElementById(
-      "detalleCategoria"
-    )
-    .textContent=
+    .getElementById("detalleCategoria")
+    .textContent =
       p.category;
 
 
   document
-    .getElementById(
-      "detalleTipo"
-    )
-    .textContent=
+    .getElementById("detalleTipo")
+    .textContent =
       p.type;
 
 
   document
-    .getElementById(
-      "detalleTotal"
-    )
-    .textContent=
+    .getElementById("detalleTotal")
+    .textContent =
       totalStock(p);
 
 
   document
-    .getElementById(
-      "detalleTexto"
-    )
-    .textContent=
+    .getElementById("detalleTexto")
+    .textContent =
       p.detail ||
       "Sin detalle adicional";
 
 
   document
-    .getElementById(
-      "detalleTallas"
-    )
-    .innerHTML=
-      Object
-        .keys(p.sizes)
+    .getElementById("detalleTallas")
+    .innerHTML =
+
+      Object.keys(p.sizes)
         .map(Number)
         .sort(
           (a,b)=>a-b
@@ -1483,39 +1546,41 @@ function openProduct(
         .join("");
 
 
-  const total=
+  const total =
     totalStock(p);
 
 
   document
-    .getElementById(
-      "detalleEstado"
-    )
-    .textContent=
+    .getElementById("detalleEstado")
+    .textContent =
+
       total>0
         ?
-          "Código activo con existencias disponibles."
+
+        "Código activo con existencias disponibles."
+
         :
-          "Código sin existencias. Se muestra porque está activada la opción de incluir stock cero.";
+
+        "Código sin existencias. Se muestra porque está activada la opción de incluir stock cero.";
 
 
-  const btnAjustar=
+  const btnAjustar =
     document.getElementById(
       "btnAjustar"
     );
 
 
-  const btnHistorial=
+  const btnHistorial =
     document.getElementById(
       "btnHistorial"
     );
 
 
-  btnAjustar.disabled=
+  btnAjustar.disabled =
     READ_ONLY_MODE;
 
 
-  btnHistorial.disabled=
+  btnHistorial.disabled =
     READ_ONLY_MODE;
 
 
@@ -1531,9 +1596,7 @@ function openProduct(
 
 
 document
-  .getElementById(
-    "btnDetalleVolver"
-  )
+  .getElementById("btnDetalleVolver")
   .addEventListener(
     "click",
     ()=>
@@ -1546,11 +1609,10 @@ document
 
 /* =========================================================
    AJUSTE
+   Actualmente desactivado
    ========================================================= */
 document
-  .getElementById(
-    "btnAjustar"
-  )
+  .getElementById("btnAjustar")
   .addEventListener(
     "click",
     ()=>{
@@ -1563,7 +1625,7 @@ document
       }
 
 
-      const p=
+      const p =
         app.selectedProduct;
 
 
@@ -1572,56 +1634,47 @@ document
 
 
       document
-        .getElementById(
-          "ajusteTitulo"
-        )
-        .textContent=
+        .getElementById("ajusteTitulo")
+        .textContent =
           `Ajustar código ${p.code}`;
 
 
       document
-        .getElementById(
-          "ajusteOriginal"
-        )
-        .textContent=
+        .getElementById("ajusteOriginal")
+        .textContent =
           formatAllStock(
             p.sizes
           );
 
 
-      const s=
+      const s =
         document
-          .getElementById(
-            "ajusteTalla"
-          );
+          .getElementById("ajusteTalla");
 
 
-      s.innerHTML=
-        Object
-          .keys(p.sizes)
+      s.innerHTML =
+        Object.keys(p.sizes)
           .map(Number)
           .sort(
             (a,b)=>a-b
           )
           .map(
-            n=>`<option>${n}</option>`
+            n=>
+              `<option>${n}</option>`
           )
           .join("");
 
 
-      s.value=
-        Object
-          .keys(p.sizes)[0];
+      s.value =
+        Object.keys(p.sizes)[0];
 
 
       syncAdjustmentQty();
 
 
       document
-        .getElementById(
-          "ajusteMotivo"
-        )
-        .value="";
+        .getElementById("ajusteMotivo")
+        .value = "";
 
 
       showScreen(
@@ -1633,14 +1686,14 @@ document
 
 function formatAllStock(sizes){
 
-  return Object
-    .keys(sizes)
+  return Object.keys(sizes)
     .map(Number)
     .sort(
       (a,b)=>a-b
     )
     .map(
-      s=>`${s}: ${sizes[s]}`
+      s=>
+        `${s}: ${sizes[s]}`
     )
     .join(" · ");
 }
@@ -1648,22 +1701,19 @@ function formatAllStock(sizes){
 
 function syncAdjustmentQty(){
 
-  const p=
+  const p =
     app.selectedProduct;
 
-  const t=
+
+  const t =
     document
-      .getElementById(
-        "ajusteTalla"
-      )
+      .getElementById("ajusteTalla")
       .value;
 
 
   document
-    .getElementById(
-      "ajusteCantidad"
-    )
-    .value=
+    .getElementById("ajusteCantidad")
+    .value =
       Number(
         p.sizes[t] || 0
       );
@@ -1671,9 +1721,7 @@ function syncAdjustmentQty(){
 
 
 document
-  .getElementById(
-    "ajusteTalla"
-  )
+  .getElementById("ajusteTalla")
   .addEventListener(
     "change",
     syncAdjustmentQty
@@ -1681,20 +1729,17 @@ document
 
 
 document
-  .getElementById(
-    "ajusteMenos"
-  )
+  .getElementById("ajusteMenos")
   .addEventListener(
     "click",
     ()=>{
 
-      const el=
+      const el =
         document
-          .getElementById(
-            "ajusteCantidad"
-          );
+          .getElementById("ajusteCantidad");
 
-      el.value=
+
+      el.value =
         Math.max(
           0,
           Number(el.value||0)-1
@@ -1704,20 +1749,17 @@ document
 
 
 document
-  .getElementById(
-    "ajusteMas"
-  )
+  .getElementById("ajusteMas")
   .addEventListener(
     "click",
     ()=>{
 
-      const el=
+      const el =
         document
-          .getElementById(
-            "ajusteCantidad"
-          );
+          .getElementById("ajusteCantidad");
 
-      el.value=
+
+      el.value =
         Number(
           el.value || 0
         ) + 1;
@@ -1726,21 +1768,18 @@ document
 
 
 document
-  .getElementById(
-    "btnCancelarAjuste"
-  )
+  .getElementById("btnCancelarAjuste")
   .addEventListener(
     "click",
-    ()=>showScreen(
-      "screenDetalle"
-    )
+    ()=>
+      showScreen(
+        "screenDetalle"
+      )
   );
 
 
 document
-  .getElementById(
-    "btnGuardarAjuste"
-  )
+  .getElementById("btnGuardarAjuste")
   .addEventListener(
     "click",
     ()=>{
@@ -1753,42 +1792,36 @@ document
       }
 
 
-      const p=
+      const p =
         app.selectedProduct;
 
 
-      const talla=
+      const talla =
         document
-          .getElementById(
-            "ajusteTalla"
-          )
+          .getElementById("ajusteTalla")
           .value;
 
 
-      const nueva=
+      const nueva =
         Math.max(
           0,
           Number(
             document
-              .getElementById(
-                "ajusteCantidad"
-              )
+              .getElementById("ajusteCantidad")
               .value || 0
           )
         );
 
 
-      const anterior=
+      const anterior =
         Number(
           p.sizes[talla] || 0
         );
 
 
-      const motivo=
+      const motivo =
         document
-          .getElementById(
-            "ajusteMotivo"
-          )
+          .getElementById("ajusteMotivo")
           .value
           .trim();
 
@@ -1811,7 +1844,7 @@ document
       }
 
 
-      p.history=
+      p.history =
         p.history || [];
 
 
@@ -1829,7 +1862,7 @@ document
       });
 
 
-      p.sizes[talla]=
+      p.sizes[talla] =
         nueva;
 
 
@@ -1848,11 +1881,10 @@ document
 
 /* =========================================================
    HISTORIAL
+   Actualmente desactivado
    ========================================================= */
 document
-  .getElementById(
-    "btnHistorial"
-  )
+  .getElementById("btnHistorial")
   .addEventListener(
     "click",
     ()=>{
@@ -1867,6 +1899,7 @@ document
 
       renderHistory();
 
+
       showScreen(
         "screenHistorial"
       );
@@ -1876,38 +1909,34 @@ document
 
 function renderHistory(){
 
-  const p=
+  const p =
     app.selectedProduct;
 
 
   document
-    .getElementById(
-      "historialProducto"
-    )
-    .textContent=
+    .getElementById("historialProducto")
+    .textContent =
       `Código ${p.code} · ${p.brand} · ${p.category} · ${p.color}`;
 
 
   document
-    .getElementById(
-      "historialLista"
-    )
-    .innerHTML=
+    .getElementById("historialLista")
+    .innerHTML =
+
       [...(p.history||[])]
         .reverse()
         .map(
           (h,i)=>{
 
-            const n=
-              (p.history||[])
-                .length-i;
+            const n =
+              (p.history||[]).length-i;
 
 
-            const d=
+            const d =
               new Date(h.at);
 
 
-            const fecha=
+            const fecha =
               d.toLocaleDateString(
                 "es-PE",
                 {
@@ -1918,7 +1947,7 @@ function renderHistory(){
               );
 
 
-            const hora=
+            const hora =
               d.toLocaleTimeString(
                 "es-PE",
                 {
@@ -1933,12 +1962,15 @@ function renderHistory(){
               <div class="history-card">
 
                 <div class="history-title">
+
                   Ajuste ${n}
                   realizado el
                   ${fecha}
                   -
                   ${hora}
+
                 </div>
+
 
                 <div class="history-change">
 
@@ -1957,9 +1989,15 @@ function renderHistory(){
 
                 </div>
 
+
                 <div class="reason">
-                  <b>Motivo:</b>
+
+                  <b>
+                    Motivo:
+                  </b>
+
                   ${escapeHtml(h.reason)}
+
                 </div>
 
               </div>
@@ -1972,9 +2010,7 @@ function renderHistory(){
 
 
 document
-  .getElementById(
-    "btnHistorialVolver"
-  )
+  .getElementById("btnHistorialVolver")
   .addEventListener(
     "click",
     ()=>
@@ -1985,7 +2021,7 @@ document
 
 
 /* =========================================================
-   ESCAPE HTML
+   PROTECCIÓN DE TEXTO HTML
    ========================================================= */
 function escapeHtml(s){
 
@@ -2030,9 +2066,8 @@ loadStockData()
 
 
       /*
-       * Nuestra API usa "actualizado".
-       * Dejamos compatibilidad con
-       * "generatedAt" por si más adelante cambia.
+       * La API actual utiliza "actualizado".
+       * También aceptamos "generatedAt".
        */
       const fechaAPI =
         payload.actualizado ||
@@ -2054,10 +2089,8 @@ loadStockData()
       ){
 
         document
-          .getElementById(
-            "dataStatus"
-          )
-          .title=
+          .getElementById("dataStatus")
+          .title =
             `Última lectura: ${
               ts.toLocaleString(
                 "es-PE"
