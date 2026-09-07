@@ -11,6 +11,139 @@ const STOCK_API_URL =
 
 const STOCK_LOAD_TIMEOUT_MS = 15000;
 
+const STOCK_LOCAL_CACHE_KEY = "babyconejitos_stock_cache_v1";
+const STOCK_LOCAL_CACHE_VERSION = 1;
+
+let brandAutocompleteInitialized = false;
+
+
+/* =========================================================
+   CACHÉ LOCAL DEL NAVEGADOR
+
+   - Guarda la última copia válida del stock en este dispositivo.
+   - Al volver a abrir la web, permite mostrar datos casi de inmediato.
+   - Después siempre se consulta la API en segundo plano para actualizar.
+   ========================================================= */
+
+function saveLocalStockCache(payload){
+
+  try{
+
+    const cacheData = {
+      version: STOCK_LOCAL_CACHE_VERSION,
+      savedAt: new Date().toISOString(),
+      actualizado:
+        payload?.actualizado ||
+        payload?.generatedAt ||
+        null,
+      products: products
+    };
+
+    localStorage.setItem(
+      STOCK_LOCAL_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+
+  }catch(error){
+
+    console.warn(
+      "No se pudo guardar el caché local de Stock.",
+      error
+    );
+  }
+}
+
+
+function loadLocalStockCache(){
+
+  try{
+
+    const raw =
+      localStorage.getItem(
+        STOCK_LOCAL_CACHE_KEY
+      );
+
+    if(!raw)
+      return null;
+
+    const cacheData =
+      JSON.parse(raw);
+
+    if(
+      !cacheData ||
+      cacheData.version !== STOCK_LOCAL_CACHE_VERSION ||
+      !Array.isArray(cacheData.products) ||
+      cacheData.products.length === 0
+    ){
+      return null;
+    }
+
+    const cachedProducts =
+      cacheData.products
+        .map(normalizeProduct)
+        .filter(p=>p.code);
+
+    if(cachedProducts.length === 0)
+      return null;
+
+    return {
+      products: cachedProducts,
+      savedAt: cacheData.savedAt || null,
+      actualizado: cacheData.actualizado || null
+    };
+
+  }catch(error){
+
+    console.warn(
+      "No se pudo leer el caché local de Stock.",
+      error
+    );
+
+    return null;
+  }
+}
+
+
+function setStatusTimestamp(
+  label,
+  dateValue
+){
+
+  const el =
+    document.getElementById(
+      "dataStatus"
+    );
+
+  if(!el)
+    return;
+
+  const ts =
+    dateValue
+      ?
+        new Date(dateValue)
+      :
+        null;
+
+  if(
+    ts &&
+    !Number.isNaN(
+      ts.getTime()
+    )
+  ){
+    el.title =
+      `${label}: ${
+        ts.toLocaleString(
+          "es-PE"
+        )
+      }`;
+  }else{
+    el.removeAttribute(
+      "title"
+    );
+  }
+}
+
+
 
 /* =========================================================
    IMÁGENES DE GOOGLE DRIVE
@@ -704,14 +837,6 @@ function getSearchState(){
 
 /* =========================================================
    COINCIDENCIA DE MARCA
-
-   Si se escribe:
-   K
-
-   coincidirá con:
-   Kelly
-   Kids
-   etc.
    ========================================================= */
 
 function brandStartsWith(
@@ -737,13 +862,6 @@ function brandStartsWith(
 
 /* =========================================================
    TALLA ESTRUCTURAL
-
-   Para construir filtros se considera que una talla
-   pertenece a un producto aunque su stock sea cero.
-
-   Ejemplo:
-   PibeNiño puede seguir mostrando 17–22 aunque
-   algunas tallas tengan cantidad 0.
    ========================================================= */
 
 function hasStructuralSize(
@@ -768,10 +886,6 @@ function hasStructuralSize(
 
 /* =========================================================
    COMPROBAR FILTROS ACTIVOS
-
-   ignoreField permite calcular qué opciones son
-   válidas para un campo concreto sin que ese mismo
-   campo se limite a sí mismo.
    ========================================================= */
 
 function matchesLinkedFilters(
@@ -1226,6 +1340,14 @@ function closeBrandSuggestions(){
 
 function initBrandAutocomplete(){
 
+  if(
+    brandAutocompleteInitialized
+  ){
+    return;
+  }
+
+  brandAutocompleteInitialized = true;
+
   const input =
     document.getElementById(
       "busMarca"
@@ -1421,13 +1543,27 @@ function initBrandAutocomplete(){
 
 function initFilters(){
 
+  const cobCategoria =
+    document.getElementById(
+      "cobCategoria"
+    );
+
+  const selectedCoverageCategory =
+    cobCategoria
+      ?
+        cobCategoria.value
+      :
+        "";
+
+
   fillSelect(
     "cobCategoria",
     uniqueValues(
       products,
       "category"
     ),
-    "Seleccionar"
+    "Seleccionar",
+    selectedCoverageCategory
   );
 
 
@@ -3511,11 +3647,53 @@ setBreadcrumb(
 );
 
 
-setDataStatus(
-  "Conectando con Google Sheets…"
-);
+const localCache =
+  loadLocalStockCache();
 
 
+if(
+  localCache
+){
+
+  products =
+    localCache.products;
+
+
+  initFilters();
+
+
+  setDataStatus(
+    `Datos guardados cargados: ${products.length} códigos. Actualizando…`,
+    "info"
+  );
+
+
+  setStatusTimestamp(
+    "Copia guardada",
+    localCache.actualizado ||
+    localCache.savedAt
+  );
+
+}else{
+
+  setDataStatus(
+    "Conectando con Google Sheets…"
+  );
+}
+
+
+/*
+  Siempre consultamos la API al abrir o recargar la web.
+
+  Si había caché local:
+  - la pantalla ya puede trabajar con esos datos,
+  - la consulta ocurre en segundo plano,
+  - al responder la API se reemplaza la copia local.
+
+  Si no había caché:
+  - se comporta como la versión anterior,
+  - espera la respuesta de la API.
+*/
 loadStockData()
 
   .then(
@@ -3524,46 +3702,23 @@ loadStockData()
       initFilters();
 
 
+      saveLocalStockCache(
+        payload
+      );
+
+
       setDataStatus(
-        `Datos reales cargados: ${products.length} códigos.`,
+        `Datos actualizados: ${products.length} códigos.`,
         "ok"
       );
 
 
-      const fechaAPI =
+      setStatusTimestamp(
+        "Última lectura del servidor",
         payload.actualizado ||
         payload.generatedAt ||
-        null;
-
-
-      const ts =
-        fechaAPI
-          ?
-            new Date(
-              fechaAPI
-            )
-          :
-            null;
-
-
-      if(
-        ts &&
-        !Number.isNaN(
-          ts.getTime()
-        )
-      ){
-
-        document
-          .getElementById(
-            "dataStatus"
-          )
-          .title =
-            `Última lectura: ${
-              ts.toLocaleString(
-                "es-PE"
-              )
-            }`;
-      }
+        null
+      );
     }
   )
 
@@ -3573,6 +3728,32 @@ loadStockData()
       console.error(
         err
       );
+
+
+      if(
+        localCache &&
+        products.length > 0
+      ){
+
+        setDataStatus(
+          `Sin conexión. Mostrando datos guardados: ${products.length} códigos.`,
+          "info"
+        );
+
+
+        setStatusTimestamp(
+          "Copia guardada",
+          localCache.actualizado ||
+          localCache.savedAt
+        );
+
+
+        toast(
+          "No se pudo actualizar el Stock. Se mantienen los datos guardados."
+        );
+
+        return;
+      }
 
 
       setDataStatus(
