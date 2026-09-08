@@ -8,16 +8,24 @@
   - sin operaciones de escritura sobre el origen
 */
 const COMPRAS_API_URL = String((window.COMPRAS_CONFIG && window.COMPRAS_CONFIG.apiUrl) || '').trim();
+const STOCK_API_URL = String((window.COMPRAS_CONFIG && window.COMPRAS_CONFIG.stockApiUrl) || '').trim();
 const CACHE_KEY = 'babyconejitos_compras_cache_v1';
 const CACHE_VERSION = 1;
+const CATALOG_CACHE_KEY = 'babyconejitos_compras_catalog_cache_v1';
+const CATALOG_CACHE_VERSION = 1;
+const STOCK_SHARED_CACHE_KEY = 'babyconejitos_stock_cache_v1';
 const JSONP_TIMEOUT_MS = 15000;
 
 const state = {
   screen: 'screen-home',
   purchases: [],
+  catalog: [],
+  visiblePurchases: [],
   detail: null,
   source: 'loading',
-  updatedAt: ''
+  catalogSource: 'loading',
+  updatedAt: '',
+  catalogUpdatedAt: ''
 };
 
 const $ = (s) => document.querySelector(s);
@@ -82,6 +90,137 @@ function escapeHtml(v){
 
 function normalizeText(v){
   return String(v ?? '').trim();
+}
+
+
+function normalizeImageUrl(url){
+  const value = normalizeText(url);
+  if(!value) return '';
+
+  let match = value.match(/drive\.google\.com\/uc\?(?:[^#]*&)?id=([^&]+)/i);
+  if(match) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+  match = value.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+  if(match) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+  match = value.match(/drive\.google\.com\/open\?(?:[^#]*&)?id=([^&]+)/i);
+  if(match) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w1000`;
+
+  return value;
+}
+
+function normalizeCatalogProduct(raw){
+  const sourceSizes = (raw && (raw.sizes || raw.tallas)) || {};
+  const sizes = {};
+  Object.entries(sourceSizes).forEach(([s,q]) => {
+    const n = Number(String(q ?? 0).replace(',','.'));
+    sizes[String(Number(s))] = Number.isFinite(n) ? n : 0;
+  });
+
+  return {
+    code: normalizeText(raw && (raw.code ?? raw.codigo)).toUpperCase(),
+    brand: normalizeText(raw && (raw.brand ?? raw.marca)),
+    category: normalizeText(raw && (raw.category ?? raw.categoria)),
+    type: normalizeText(raw && (raw.type ?? raw.tipo)),
+    color: normalizeText(raw && raw.color),
+    detail: normalizeText(raw && (raw.detail ?? raw.detalle)),
+    sizes,
+    imageUrl: normalizeImageUrl(raw && (raw.imageUrl ?? raw.imagen))
+  };
+}
+
+function catalogRowsFromPayload(payload){
+  const rows = payload && (payload.products || payload.productos || payload.data);
+  return Array.isArray(rows) ? rows : [];
+}
+
+function readCatalogCache(){
+  const candidates = [CATALOG_CACHE_KEY, STOCK_SHARED_CACHE_KEY];
+  for(const key of candidates){
+    try{
+      const cache = JSON.parse(localStorage.getItem(key) || 'null');
+      if(!cache || !Array.isArray(cache.products) || !cache.products.length) continue;
+      const products = cache.products.map(normalizeCatalogProduct).filter(p => p.code);
+      if(products.length){
+        return {
+          products,
+          savedAt: cache.savedAt || '',
+          actualizado: cache.actualizado || ''
+        };
+      }
+    }catch(_){ }
+  }
+  return null;
+}
+
+function writeCatalogCache(products, updatedAt){
+  try{
+    localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({
+      version: CATALOG_CACHE_VERSION,
+      savedAt: new Date().toISOString(),
+      actualizado: updatedAt || '',
+      products
+    }));
+  }catch(_){ }
+}
+
+function catalogProductForCode(code){
+  const wanted = normalizeText(code).toUpperCase();
+  return state.catalog.find(p => p.code === wanted) || null;
+}
+
+function productVisualForCode(code, altPrefix='Producto'){
+  const product = catalogProductForCode(code);
+  if(product && product.imageUrl){
+    return `<img class="catalog-product-image" src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(altPrefix)} ${escapeHtml(code)}" loading="lazy" referrerpolicy="no-referrer">`;
+  }
+  return '👟';
+}
+
+function rerenderCatalogVisuals(){
+  if(state.visiblePurchases.length){
+    renderPurchases(state.visiblePurchases);
+  }
+  if(state.detail){
+    renderDetailProductVisual(state.detail);
+  }
+}
+
+function renderDetailProductVisual(x){
+  const box = $('.read-product-card .shoe-placeholder');
+  if(!box || !x) return;
+  box.innerHTML = productVisualForCode(x.code, 'Código');
+}
+
+async function loadCatalog(){
+  const cache = readCatalogCache();
+  if(cache && cache.products.length){
+    state.catalog = cache.products;
+    state.catalogSource = 'cache';
+    state.catalogUpdatedAt = cache.actualizado || cache.savedAt || '';
+    rerenderCatalogVisuals();
+  }
+
+  if(!STOCK_API_URL){
+    state.catalogSource = cache ? 'cache-no-api' : 'no-api';
+    return;
+  }
+
+  try{
+    const payload = await loadJsonp(STOCK_API_URL, '__stockComprasCallback');
+    if(!payload || payload.ok !== true) throw new Error((payload && payload.error) || 'Respuesta inválida del catálogo de Stock.');
+    const fresh = catalogRowsFromPayload(payload).map(normalizeCatalogProduct).filter(p => p.code);
+    if(!fresh.length) throw new Error('Stock no devolvió productos válidos.');
+
+    state.catalog = fresh;
+    state.catalogSource = 'api';
+    state.catalogUpdatedAt = payload.actualizado || payload.generatedAt || new Date().toISOString();
+    writeCatalogCache(fresh, state.catalogUpdatedAt);
+    rerenderCatalogVisuals();
+  }catch(err){
+    state.catalogSource = cache ? 'cache-error' : 'api-error';
+    console.warn('No se pudo actualizar el catálogo de Stock para Compras:', err);
+  }
 }
 
 function normalizePurchase(raw){
@@ -153,9 +292,9 @@ function writeCache(purchases, updatedAt){
   }catch(_){ }
 }
 
-function loadJsonp(url){
+function loadJsonp(url, callbackPrefix='__comprasCallback'){
   return new Promise((resolve,reject) => {
-    const callbackName = `__comprasCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement('script');
     const sep = url.includes('?') ? '&' : '?';
     let finished = false;
@@ -334,6 +473,7 @@ function filteredPurchases(){
 }
 
 function renderPurchases(rows){
+  state.visiblePurchases = rows.slice();
   const sorted = rows.slice().sort((a,b)=>b.date.localeCompare(a.date) || b.purchase.localeCompare(a.purchase));
   const list = $('#purchaseList');
   list.innerHTML = '';
@@ -348,7 +488,7 @@ function renderPurchases(rows){
     const el = document.createElement('article');
     el.className = 'purchase-row';
     el.innerHTML = `
-      <div class="purchase-thumb read-thumb" aria-hidden="true">👟</div>
+      <div class="purchase-thumb read-thumb">${productVisualForCode(x.code, 'Código')}</div>
       <div class="purchase-main">
         <div class="purchase-top">
           <strong>${escapeHtml(x.purchase)}</strong>
@@ -381,6 +521,7 @@ function resetFilters(){
 
 function openPurchaseDetail(x){
   state.detail = x;
+  renderDetailProductVisual(x);
   $('#detailSubtitle').textContent = `${x.purchase} · ${formatDateEs(x.date)}`;
   $('#detailProductCode').textContent = x.code;
   $('#detailProductInfo').textContent = `${x.category} · ${x.type} · ${x.color}`;
@@ -432,5 +573,16 @@ $('#btnClearConsult').onclick = resetFilters;
   $(selector).addEventListener('keydown', e => { if(e.key === 'Enter') runSearch(); });
 });
 
+document.addEventListener('error', e => {
+  const img = e.target;
+  if(!(img instanceof HTMLImageElement) || !img.classList.contains('catalog-product-image')) return;
+  const parent = img.parentElement;
+  if(parent){
+    img.remove();
+    if(!parent.textContent.trim()) parent.textContent = '👟';
+  }
+}, true);
+
 $('#btnBack').style.visibility = 'hidden';
 loadPurchases();
+loadCatalog();
