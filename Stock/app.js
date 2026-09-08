@@ -2325,11 +2325,48 @@ function renderCoverageProducts(){
     );
 
 
-  box.innerHTML =
-
+  /*
+   * En Cobertura solamente mostramos códigos
+   * que realmente aportan stock disponible.
+   *
+   * Los códigos con stock total 0 siguen existiendo
+   * en el sistema y continúan disponibles en
+   * "Buscar producto" cuando se incluye stock cero.
+   */
+  const productosConStock =
     app
       .selectedCoverage
       .matches
+      .filter(
+        p=>
+          totalStock(p) > 0
+      );
+
+
+  if(
+    productosConStock.length === 0
+  ){
+
+    box.innerHTML =
+      `
+        <div class="info-card compact">
+          <strong>
+            Sin códigos con stock disponible
+          </strong>
+
+          <p>
+            Esta combinación no tiene códigos con existencias.
+          </p>
+        </div>
+      `;
+
+    return;
+  }
+
+
+  box.innerHTML =
+
+    productosConStock
       .map(
         p=>
           `
@@ -3663,7 +3700,7 @@ if(
 
 
   setDataStatus(
-    `Datos guardados cargados: ${products.length} códigos. Actualizando…`,
+    `📱 Caché local: ${products.length} códigos · Actualizando…`,
     "info"
   );
 
@@ -3707,8 +3744,16 @@ loadStockData()
       );
 
 
+      const origenDatos =
+        payload.cacheServidor === true
+          ?
+            "⚡ Caché servidor"
+          :
+            "☁️ Google Sheets";
+
+
       setDataStatus(
-        `Datos actualizados: ${products.length} códigos.`,
+        `${origenDatos}: ${products.length} códigos.`,
         "ok"
       );
 
