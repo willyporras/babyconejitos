@@ -43,7 +43,8 @@ const FILTER_IDS = {
   size: '#consultSize'
 };
 
-const SELECT_FILTERS = ['brand','category','type','color','entry','size'];
+const CATALOG_FILTERS = ['brand','category','type','color','size'];
+const SELECT_FILTERS = [...CATALOG_FILTERS,'entry'];
 const EMPTY_LABELS = {
   brand: 'Todas las marcas',
   category: 'Todas las categorías',
@@ -90,6 +91,18 @@ function escapeHtml(v){
 
 function normalizeText(v){
   return String(v ?? '').trim();
+}
+
+function canonicalValue(v){
+  return normalizeText(v)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g,'');
+}
+
+function sameValue(a,b){
+  return canonicalValue(a) === canonicalValue(b);
 }
 
 
@@ -178,6 +191,10 @@ function productVisualForCode(code, altPrefix='Producto'){
 }
 
 function rerenderCatalogVisuals(){
+  // Al llegar Stock, actualiza imágenes y también los filtros de catálogo.
+  // Las selecciones válidas se conservan.
+  refreshFacets();
+
   if(state.visiblePurchases.length){
     renderPurchases(state.visiblePurchases);
   }
@@ -411,52 +428,106 @@ function recordMatches(x, f, ignoreKey=''){
   if(ignoreKey !== 'purchase' && f.purchase && !x.purchase.toUpperCase().includes(f.purchase)) return false;
   if(ignoreKey !== 'code' && f.code && !x.code.toUpperCase().includes(f.code)) return false;
   if(ignoreKey !== 'date' && f.date && x.date !== f.date) return false;
-  if(ignoreKey !== 'brand' && f.brand && x.brand !== f.brand) return false;
-  if(ignoreKey !== 'category' && f.category && x.category !== f.category) return false;
-  if(ignoreKey !== 'type' && f.type && x.type !== f.type) return false;
-  if(ignoreKey !== 'color' && f.color && x.color !== f.color) return false;
-  if(ignoreKey !== 'entry' && f.entry && x.entry !== f.entry) return false;
-  if(ignoreKey !== 'size' && f.size && !x.sizes.some(s => String(s.size) === String(f.size))) return false;
+  if(ignoreKey !== 'brand' && f.brand && !sameValue(x.brand,f.brand)) return false;
+  if(ignoreKey !== 'category' && f.category && !sameValue(x.category,f.category)) return false;
+  if(ignoreKey !== 'type' && f.type && !sameValue(x.type,f.type)) return false;
+  if(ignoreKey !== 'color' && f.color && !sameValue(x.color,f.color)) return false;
+  if(ignoreKey !== 'entry' && f.entry && !sameValue(x.entry,f.entry)) return false;
+  if(ignoreKey !== 'size' && f.size && !x.sizes.some(s => Number(s.size) === Number(f.size))) return false;
   return true;
 }
 
-function valueForFacet(x,key){
-  if(key === 'size') return x.sizes.map(s=>String(s.size));
-  return [x[key]];
+function catalogFilterSource(){
+  if(state.catalog.length) return state.catalog;
+
+  // Respaldo temporal mientras Stock carga o si no estuviera disponible.
+  // En cuanto llega el catálogo real, los filtros se reconstruyen con Stock.
+  return state.purchases.map(x => ({
+    code:x.code,
+    brand:x.brand,
+    category:x.category,
+    type:x.type,
+    color:x.color,
+    sizes:Object.fromEntries(x.sizes.map(s => [String(s.size), Number(s.qty) || 0]))
+  }));
+}
+
+function catalogMatches(p,f,ignoreKey=''){
+  if(ignoreKey !== 'brand' && f.brand && !sameValue(p.brand,f.brand)) return false;
+  if(ignoreKey !== 'category' && f.category && !sameValue(p.category,f.category)) return false;
+  if(ignoreKey !== 'type' && f.type && !sameValue(p.type,f.type)) return false;
+  if(ignoreKey !== 'color' && f.color && !sameValue(p.color,f.color)) return false;
+  if(ignoreKey !== 'size' && f.size){
+    const wanted = Number(f.size);
+    const sizes = Object.keys(p.sizes || {}).map(Number);
+    if(!sizes.includes(wanted)) return false;
+  }
+  return true;
+}
+
+function catalogValuesForFacet(p,key){
+  if(key === 'size') return Object.keys(p.sizes || {}).map(s => String(Number(s)));
+  return [p[key]];
+}
+
+function uniqueFacetValues(values,key){
+  const map = new Map();
+  values.filter(Boolean).forEach(v => {
+    const display = String(v);
+    const token = key === 'size' ? String(Number(v)) : canonicalValue(v);
+    if(!map.has(token)) map.set(token,display);
+  });
+  return [...map.values()].sort((a,b) => {
+    if(key === 'size') return Number(a)-Number(b);
+    return String(a).localeCompare(String(b),'es',{sensitivity:'base'});
+  });
 }
 
 function setSelectOptions(key, values, selected){
   const el = $(FILTER_IDS[key]);
-  const unique = [...new Set(values.filter(Boolean))].sort((a,b) => {
-    if(key === 'size') return Number(a)-Number(b);
-    return String(a).localeCompare(String(b),'es',{sensitivity:'base'});
-  });
+  const unique = uniqueFacetValues(values,key);
   el.innerHTML = `<option value="">${EMPTY_LABELS[key]}</option>` + unique.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-  if(selected && unique.includes(selected)) el.value = selected;
-  else el.value = '';
+
+  if(selected){
+    const matched = unique.find(v => key === 'size' ? Number(v) === Number(selected) : sameValue(v,selected));
+    el.value = matched || '';
+  }else{
+    el.value = '';
+  }
 }
 
 function populateFacets(){
-  const blank = {purchase:'',code:'',date:'',brand:'',category:'',type:'',color:'',entry:'',size:''};
-  for(const key of SELECT_FILTERS){
-    const values = state.purchases.flatMap(x=>valueForFacet(x,key));
-    setSelectOptions(key,values,blank[key]);
+  const current = getFilters();
+  const source = catalogFilterSource();
+
+  for(const key of CATALOG_FILTERS){
+    const values = source.flatMap(x => catalogValuesForFacet(x,key));
+    setSelectOptions(key,values,current[key]);
   }
+
+  // Ingreso pertenece al historial de Compras, no al catálogo de Stock.
+  // Se ofrecen todas las opciones conocidas, aunque una combinación concreta dé cero resultados.
+  setSelectOptions('entry',state.purchases.map(x=>x.entry),current.entry);
   updateCompatibleHint();
 }
 
 function refreshFacets(){
-  // Dos pasadas permiten que, al invalidarse una selección, los demás desplegables
-  // se recalculen inmediatamente con la nueva combinación válida.
+  const source = catalogFilterSource();
+
+  // Los cinco filtros de producto se interconectan exclusivamente con el catálogo.
+  // Por eso una combinación válida sigue siendo seleccionable aunque nunca se haya comprado.
   for(let pass=0;pass<2;pass++){
     const f = getFilters();
-    for(const key of SELECT_FILTERS){
+    for(const key of CATALOG_FILTERS){
       const selected = $(FILTER_IDS[key]).value;
-      const compatible = state.purchases.filter(x => recordMatches(x,f,key));
-      const values = compatible.flatMap(x => valueForFacet(x,key));
+      const compatible = source.filter(x => catalogMatches(x,f,key));
+      const values = compatible.flatMap(x => catalogValuesForFacet(x,key));
       setSelectOptions(key,values,selected);
     }
   }
+
+  const entrySelected = $(FILTER_IDS.entry).value;
+  setSelectOptions('entry',state.purchases.map(x=>x.entry),entrySelected);
   updateCompatibleHint();
 }
 
@@ -464,7 +535,8 @@ function updateCompatibleHint(){
   const f = getFilters();
   const compatible = state.purchases.filter(x=>recordMatches(x,f));
   const pairs = compatible.reduce((a,x)=>a+x.pairs,0);
-  $('#compatibleHint').textContent = `${compatible.length} compras compatibles con los filtros actuales · ${pairs} pares`;
+  const catalogLabel = state.catalog.length ? 'Combinación válida del catálogo' : 'Filtros disponibles';
+  $('#compatibleHint').textContent = `${catalogLabel} · Historial: ${compatible.length} compras · ${pairs} pares`;
 }
 
 function filteredPurchases(){
@@ -472,12 +544,37 @@ function filteredPurchases(){
   return state.purchases.filter(x => recordMatches(x,f));
 }
 
-function renderPurchases(rows){
+function renderPurchases(rows, searched=false){
   state.visiblePurchases = rows.slice();
   const sorted = rows.slice().sort((a,b)=>b.date.localeCompare(a.date) || b.purchase.localeCompare(a.purchase));
   const list = $('#purchaseList');
   list.innerHTML = '';
   $('#consultEmpty').classList.toggle('hidden', sorted.length > 0);
+  if(!sorted.length){
+    const title = $('#consultEmpty h3');
+    const text = $('#consultEmpty p');
+    if(searched){
+      const f = getFilters();
+      const labels = [
+        f.brand,
+        f.category,
+        f.type,
+        f.color,
+        f.size ? `Talla ${f.size}` : '',
+        f.entry,
+        f.code ? `Código ${f.code}` : '',
+        f.purchase ? `Compra ${f.purchase}` : '',
+        f.date ? formatDateEs(f.date) : ''
+      ].filter(Boolean);
+      title.textContent = 'No se registraron compras';
+      text.textContent = labels.length
+        ? `No hay compras registradas para: ${labels.join(' · ')}.`
+        : 'No hay compras registradas con los criterios seleccionados.';
+    }else{
+      title.textContent = 'No encontramos compras';
+      text.textContent = 'No hay datos de compras para mostrar.';
+    }
+  }
   $('#consultCount').textContent = `${sorted.length} ${sorted.length === 1 ? 'registro' : 'registros'}`;
   $('#metricPurchases').textContent = sorted.length.toLocaleString('es-PE');
   $('#metricPairs').textContent = sorted.reduce((a,x)=>a+x.pairs,0).toLocaleString('es-PE');
@@ -508,9 +605,9 @@ function renderPurchases(rows){
 
 function runSearch(){
   const rows = filteredPurchases();
-  renderPurchases(rows);
+  renderPurchases(rows,true);
   updateCompatibleHint();
-  if(!rows.length) toast('No encontramos compras con esos filtros.');
+  if(!rows.length) toast('No se registraron compras con esos filtros.');
 }
 
 function resetFilters(){
@@ -546,7 +643,7 @@ function filterSameProduct(){
   resetFilters();
   $('#consultProductCode').value = x.code;
   refreshFacets();
-  renderPurchases(filteredPurchases());
+  renderPurchases(filteredPurchases(),true);
   show('screen-consult');
 }
 
