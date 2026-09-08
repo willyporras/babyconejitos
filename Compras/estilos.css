@@ -322,3 +322,20 @@
 .read-detail-actions{grid-template-columns:1fr 1fr}.read-detail-actions .primary-btn{grid-column:auto}
 @media(max-width:900px){.consult-grid-extended{grid-template-columns:repeat(2,1fr)}.detail-meta-extended{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.connection-pill{font-size:10px;padding:6px 8px}.consult-grid-extended{grid-template-columns:1fr}.read-consult-actions{grid-template-columns:1fr 1fr}.read-consult-actions .secondary-btn,.read-consult-actions .primary-btn{min-width:0}.metrics-grid{grid-template-columns:1fr 1fr 1fr;gap:7px}.metric-card{padding:11px}.metric-card strong{font-size:16px}.detail-meta-extended{grid-template-columns:1fr 1fr}.read-detail-actions{grid-template-columns:1fr}.read-detail-actions .primary-btn{grid-column:auto}}
+
+
+/* ===== Compras · imágenes reales desde catálogo Stock ===== */
+.purchase-thumb.read-thumb .catalog-product-image{
+  width:100%;height:100%;object-fit:contain;display:block;
+}
+.read-product-card .shoe-placeholder{
+  width:100%;min-height:145px;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;margin-bottom:8px;
+}
+.read-product-card .shoe-placeholder .catalog-product-image{
+  width:auto;max-width:100%;height:145px;object-fit:contain;display:block;
+}
+@media(max-width:600px){
+  .read-product-card .shoe-placeholder{min-height:118px}
+  .read-product-card .shoe-placeholder .catalog-product-image{height:118px}
+}
