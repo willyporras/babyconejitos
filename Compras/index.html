@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061b35">
+  <title>Compras · Solo lectura</title>
+  <link rel="stylesheet" href="estilos.css?v=lectura1">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="btnBack" aria-label="Volver">←</button>
+    <div class="brand"><span class="brand-icon">♧</span><span>Compras</span></div>
+    <div class="connection-pill" id="connectionPill">Solo lectura</div>
+  </header>
+
+  <main>
+    <section class="screen active" id="screen-home">
+      <div class="hero home-hero">
+        <div class="hero-icon">🛍️</div>
+        <h1>Compras</h1>
+        <p>Consulta de compras registradas</p>
+      </div>
+      <div class="home-card read-home-card">
+        <div class="menu-icon">☷</div>
+        <h2>Consultar compras</h2>
+        <p>Busca por compra, producto, fecha o características. Este módulo no modifica los datos de origen.</p>
+        <button class="primary-btn full" id="btnOpenConsult">Consultar compras →</button>
+      </div>
+      <div class="dataset-summary" id="homeDatasetSummary"></div>
+    </section>
+
+    <section class="screen" id="screen-consult">
+      <div class="page-title compact">
+        <span class="section-icon">☷</span>
+        <div><h1>Consultar compras</h1><p>Los filtros se ajustan entre sí según las compras realmente disponibles.</p></div>
+      </div>
+
+      <div class="form-card consult-filters">
+        <div class="consult-grid consult-grid-extended">
+          <div><label for="consultPurchaseCode">N.º de compra</label><input id="consultPurchaseCode" placeholder="Ej. C-0152" autocomplete="off"></div>
+          <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A433" autocomplete="off"></div>
+          <div><label for="consultDate">Fecha</label><input id="consultDate" type="date"></div>
+          <div><label for="consultBrand">Marca</label><select id="consultBrand"><option value="">Todas las marcas</option></select></div>
+          <div><label for="consultCategory">Categoría</label><select id="consultCategory"><option value="">Todas las categorías</option></select></div>
+          <div><label for="consultType">Tipo</label><select id="consultType"><option value="">Todos los tipos</option></select></div>
+          <div><label for="consultColor">Color</label><select id="consultColor"><option value="">Todos los colores</option></select></div>
+          <div><label for="consultEntry">Ingreso</label><select id="consultEntry"><option value="">Nuevo o reposición</option></select></div>
+          <div><label for="consultSize">Talla incluida</label><select id="consultSize"><option value="">Todas las tallas</option></select></div>
+        </div>
+        <div class="live-hint" id="compatibleHint"></div>
+        <div class="consult-actions read-consult-actions">
+          <button class="secondary-btn" id="btnClearConsult">Limpiar</button>
+          <button class="primary-btn" id="btnRunConsult">🔎 Buscar compras</button>
+        </div>
+      </div>
+
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card"><small>Compras</small><strong id="metricPurchases">0</strong></div>
+        <div class="metric-card"><small>Pares</small><strong id="metricPairs">0</strong></div>
+        <div class="metric-card"><small>Inversión</small><strong id="metricCost">S/ 0.00</strong></div>
+      </div>
+
+      <div class="consult-results-head"><div><h2>Compras encontradas</h2><p id="consultCount">0 registros</p></div></div>
+      <div class="purchase-list" id="purchaseList"></div>
+      <div class="empty-state hidden" id="consultEmpty"><div>🔍</div><h3>No encontramos compras</h3><p>Prueba con otros filtros.</p></div>
+      <div class="consult-footer-actions"><button class="secondary-btn full" id="btnExitConsult">← Volver a Compras</button></div>
+    </section>
+
+    <section class="screen" id="screen-purchase-detail">
+      <div class="page-title compact"><span class="section-icon">🧾</span><div><h1>Detalle de compra</h1><p id="detailSubtitle">—</p></div></div>
+
+      <div class="product-result-layout detail-layout read-detail-layout">
+        <div class="product-result-card product-result-photo read-product-card">
+          <div class="shoe-placeholder">👟</div>
+          <div class="product-result-code" id="detailProductCode">—</div>
+          <p id="detailProductInfo">—</p>
+          <small>Código de producto</small>
+        </div>
+        <div class="summary-card summary-brand"><span>🏷️</span><small>Marca</small><strong id="detailBrand">—</strong></div>
+        <div class="summary-card summary-sizes"><span>📏</span><small>Tallas y cantidades</small><strong id="detailSizes">—</strong></div>
+        <div class="summary-card summary-pairs"><span>👟</span><small>Total de pares</small><strong id="detailPairs">0</strong></div>
+        <div class="summary-card summary-money"><span>💰</span><small>Costo total</small><strong id="detailMoney">S/ 0.00</strong></div>
+      </div>
+
+      <div class="detail-meta detail-meta-extended">
+        <div><small>N.º de compra</small><strong id="detailPurchase">—</strong></div>
+        <div><small>Fecha</small><strong id="detailDate">—</strong></div>
+        <div><small>Ingreso</small><strong id="detailEntry">—</strong></div>
+        <div><small>Costo por par</small><strong id="detailUnitCost">—</strong></div>
+        <div><small>Categoría</small><strong id="detailCategory">—</strong></div>
+        <div><small>Tipo</small><strong id="detailType">—</strong></div>
+        <div><small>Color</small><strong id="detailColor">—</strong></div>
+        <div><small>Mes</small><strong id="detailMonth">—</strong></div>
+      </div>
+
+      <div class="info-box">ⓘ <div><strong>Modo solo lectura</strong><p>La información mostrada proviene de Compras y no puede editarse desde este módulo.</p></div></div>
+      <div class="actions-row detail-actions read-detail-actions">
+        <button class="secondary-btn" id="btnSameProduct">Ver compras de este código</button>
+        <button class="primary-btn" id="btnBackResults">← Volver a resultados</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js?v=lectura1"></script>
+  <script src="app.js?v=lectura1"></script>
+</body>
+</html>
