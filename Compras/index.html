@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#061b35">
   <title>Compras · Solo lectura</title>
-  <link rel="stylesheet" href="estilos.css?v=lectura3">
+  <link rel="stylesheet" href="estilos.css?v=lectura4">
 </head>
 <body>
   <header class="topbar">
@@ -40,7 +40,26 @@
         <div class="consult-grid consult-grid-extended">
           <div><label for="consultPurchaseCode">N.º de compra</label><input id="consultPurchaseCode" placeholder="Ej. C-0152" autocomplete="off"></div>
           <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A433" autocomplete="off"></div>
-          <div><label for="consultDate">Fecha</label><input id="consultDate" type="date"></div>
+          <div class="date-filter-field">
+            <label for="consultDateDisplay">Fecha</label>
+            <div class="purchase-date-picker" id="purchaseDatePicker">
+              <input id="consultDateDisplay" type="text" placeholder="Seleccionar fecha" readonly autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+              <input id="consultDate" type="hidden">
+              <button class="date-picker-toggle" id="consultDateToggle" type="button" aria-label="Abrir calendario" title="Abrir calendario">📅</button>
+              <div class="purchase-calendar hidden" id="purchaseCalendar" role="dialog" aria-label="Calendario de compras">
+                <div class="purchase-calendar-head">
+                  <button type="button" class="calendar-nav" id="calendarPrev" aria-label="Mes anterior">‹</button>
+                  <strong id="calendarMonthLabel">—</strong>
+                  <button type="button" class="calendar-nav" id="calendarNext" aria-label="Mes siguiente">›</button>
+                </div>
+                <div class="purchase-calendar-weekdays" aria-hidden="true">
+                  <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                </div>
+                <div class="purchase-calendar-days" id="calendarDays"></div>
+                <div class="purchase-calendar-legend"><span class="calendar-legend-dot"></span>Día con compra</div>
+              </div>
+            </div>
+          </div>
           <div><label for="consultBrand">Marca</label><select id="consultBrand"><option value="">Todas las marcas</option></select></div>
           <div><label for="consultCategory">Categoría</label><select id="consultCategory"><option value="">Todas las categorías</option></select></div>
           <div><label for="consultType">Tipo</label><select id="consultType"><option value="">Todos los tipos</option></select></div>
@@ -104,6 +123,6 @@
 
   <div class="toast" id="toast"></div>
   <script src="config.js?v=lectura3"></script>
-  <script src="app.js?v=lectura3"></script>
+  <script src="app.js?v=lectura4"></script>
 </body>
 </html>

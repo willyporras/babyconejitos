@@ -25,7 +25,9 @@ const state = {
   source: 'loading',
   catalogSource: 'loading',
   updatedAt: '',
-  catalogUpdatedAt: ''
+  catalogUpdatedAt: '',
+  calendarYear: null,
+  calendarMonth: null
 };
 
 const $ = (s) => document.querySelector(s);
@@ -78,6 +80,113 @@ function formatDateEs(v){
   if(!v) return '—';
   const [y,m,d] = String(v).slice(0,10).split('-');
   return (y && m && d) ? `${d}/${m}/${y}` : v;
+}
+
+const CALENDAR_MONTHS = [
+  'enero','febrero','marzo','abril','mayo','junio',
+  'julio','agosto','septiembre','octubre','noviembre','diciembre'
+];
+
+function purchaseDateSet(){
+  return new Set(state.purchases.map(x => x.date).filter(Boolean));
+}
+
+function latestPurchaseDate(){
+  const dates = state.purchases.map(x => x.date).filter(Boolean).sort();
+  return dates.length ? dates[dates.length-1] : '';
+}
+
+function selectedConsultDate(){
+  return normalizeText($('#consultDate').value);
+}
+
+function syncDateDisplay(){
+  const date = selectedConsultDate();
+  $('#consultDateDisplay').value = date ? formatDateEs(date) : '';
+}
+
+function setConsultDate(date){
+  $('#consultDate').value = date || '';
+  syncDateDisplay();
+  $('#consultDate').dispatchEvent(new Event('change', {bubbles:true}));
+}
+
+function calendarBaseDate(){
+  return selectedConsultDate() || latestPurchaseDate() || new Date().toISOString().slice(0,10);
+}
+
+function ensureCalendarMonth(){
+  if(state.calendarYear !== null && state.calendarMonth !== null) return;
+  const base = calendarBaseDate();
+  const parts = base.split('-').map(Number);
+  state.calendarYear = parts[0] || new Date().getFullYear();
+  state.calendarMonth = Math.max(0, Math.min(11, (parts[1] || 1)-1));
+}
+
+function renderPurchaseCalendar(){
+  ensureCalendarMonth();
+  const year = state.calendarYear;
+  const month = state.calendarMonth;
+  const datesWithPurchases = purchaseDateSet();
+  const selected = selectedConsultDate();
+
+  $('#calendarMonthLabel').textContent = `${CALENDAR_MONTHS[month]} ${year}`;
+  const daysBox = $('#calendarDays');
+  daysBox.innerHTML = '';
+
+  const firstDay = new Date(year, month, 1);
+  const mondayIndex = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for(let i=0;i<mondayIndex;i++){
+    const spacer = document.createElement('span');
+    spacer.className = 'calendar-day-spacer';
+    daysBox.appendChild(spacer);
+  }
+
+  for(let day=1;day<=daysInMonth;day++){
+    const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'calendar-day';
+    button.textContent = String(day);
+    button.dataset.date = iso;
+    button.setAttribute('aria-label', `${day} de ${CALENDAR_MONTHS[month]} de ${year}${datesWithPurchases.has(iso) ? ', día con compra' : ''}`);
+    if(datesWithPurchases.has(iso)) button.classList.add('has-purchase');
+    if(selected === iso) button.classList.add('selected');
+    button.addEventListener('click', ()=>{
+      setConsultDate(iso);
+      closePurchaseCalendar();
+    });
+    daysBox.appendChild(button);
+  }
+}
+
+function openPurchaseCalendar(){
+  const selected = selectedConsultDate();
+  const base = selected || latestPurchaseDate() || new Date().toISOString().slice(0,10);
+  const [y,m] = base.split('-').map(Number);
+  state.calendarYear = y || new Date().getFullYear();
+  state.calendarMonth = Math.max(0, Math.min(11, (m || 1)-1));
+  renderPurchaseCalendar();
+  $('#purchaseCalendar').classList.remove('hidden');
+  $('#consultDateDisplay').setAttribute('aria-expanded','true');
+}
+
+function closePurchaseCalendar(){
+  $('#purchaseCalendar').classList.add('hidden');
+  $('#consultDateDisplay').setAttribute('aria-expanded','false');
+}
+
+function shiftCalendarMonth(delta){
+  ensureCalendarMonth();
+  let year = state.calendarYear;
+  let month = state.calendarMonth + delta;
+  if(month < 0){ month = 11; year--; }
+  if(month > 11){ month = 0; year++; }
+  state.calendarYear = year;
+  state.calendarMonth = month;
+  renderPurchaseCalendar();
 }
 
 function sizesText(sizes){
@@ -391,6 +500,8 @@ function afterDataLoaded(){
   updateConnectionPill();
   renderHomeSummary();
   renderPurchases(state.purchases);
+  syncDateDisplay();
+  if(!$('#purchaseCalendar').classList.contains('hidden')) renderPurchaseCalendar();
 }
 
 function updateConnectionPill(){
@@ -612,6 +723,8 @@ function runSearch(){
 
 function resetFilters(){
   for(const selector of Object.values(FILTER_IDS)) $(selector).value = '';
+  syncDateDisplay();
+  closePurchaseCalendar();
   populateFacets();
   renderPurchases(state.purchases);
 }
@@ -661,13 +774,32 @@ $('#btnSameProduct').onclick = filterSameProduct;
 for(const key of SELECT_FILTERS){
   $(FILTER_IDS[key]).addEventListener('change', refreshFacets);
 }
-$('#consultDate').addEventListener('change', refreshFacets);
+$('#consultDate').addEventListener('change', ()=>{
+  syncDateDisplay();
+  refreshFacets();
+});
+$('#consultDateDisplay').addEventListener('click', openPurchaseCalendar);
+$('#consultDateToggle').addEventListener('click', ()=>{
+  if($('#purchaseCalendar').classList.contains('hidden')) openPurchaseCalendar();
+  else closePurchaseCalendar();
+});
+$('#calendarPrev').addEventListener('click', ()=>shiftCalendarMonth(-1));
+$('#calendarNext').addEventListener('click', ()=>shiftCalendarMonth(1));
 $('#consultPurchaseCode').addEventListener('input', refreshFacets);
 $('#consultProductCode').addEventListener('input', refreshFacets);
 $('#btnRunConsult').onclick = runSearch;
 $('#btnClearConsult').onclick = resetFilters;
 ['#consultPurchaseCode','#consultProductCode'].forEach(selector => {
   $(selector).addEventListener('keydown', e => { if(e.key === 'Enter') runSearch(); });
+});
+
+document.addEventListener('click', e => {
+  const picker = $('#purchaseDatePicker');
+  if(picker && !picker.contains(e.target)) closePurchaseCalendar();
+});
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closePurchaseCalendar();
 });
 
 document.addEventListener('error', e => {

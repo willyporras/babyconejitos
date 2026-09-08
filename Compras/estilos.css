@@ -339,3 +339,30 @@
   .read-product-card .shoe-placeholder{min-height:118px}
   .read-product-card .shoe-placeholder .catalog-product-image{height:118px}
 }
+
+
+/* ===== Compras · calendario simple de fechas con compras ===== */
+.date-filter-field{min-width:0}
+.purchase-date-picker{position:relative}
+.purchase-date-picker>input[type="text"]{padding-right:46px;cursor:pointer;background:#fff}
+.date-picker-toggle{position:absolute;right:5px;top:5px;width:36px;height:36px;border:0;border-radius:10px;background:#eef4ff;cursor:pointer;font-size:17px;display:grid;place-items:center}
+.date-picker-toggle:hover{background:#e2ecff}
+.purchase-calendar{position:absolute;z-index:40;top:calc(100% + 8px);left:0;width:min(330px,calc(100vw - 34px));background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 16px 38px rgba(24,43,72,.18)}
+.purchase-calendar-head{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;gap:8px;margin-bottom:10px}
+.purchase-calendar-head strong{text-align:center;text-transform:capitalize;font-size:14px}
+.calendar-nav{width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:#f7f9fc;cursor:pointer;font-size:23px;line-height:1}
+.calendar-nav:hover{background:#eef4ff}
+.purchase-calendar-weekdays,.purchase-calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.purchase-calendar-weekdays{margin-bottom:4px}.purchase-calendar-weekdays span{text-align:center;color:var(--muted);font-size:10px;font-weight:800;padding:4px 0}
+.calendar-day-spacer{aspect-ratio:1}
+.calendar-day{position:relative;aspect-ratio:1;border:1px solid transparent;border-radius:10px;background:transparent;cursor:pointer;font-size:12px;color:var(--text);display:grid;place-items:center}
+.calendar-day:hover{background:#f2f6fc;border-color:#dbe6f5}
+.calendar-day.has-purchase{background:#edf4ff;border-color:#c8dcff;font-weight:900;color:#173f78}
+.calendar-day.has-purchase::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:#3478d4}
+.calendar-day.selected{outline:2px solid #173f78;outline-offset:-2px}
+.purchase-calendar-legend{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:9px;color:var(--muted);font-size:10px}
+.calendar-legend-dot{width:7px;height:7px;border-radius:50%;background:#3478d4}
+@media(max-width:600px){
+  .purchase-calendar{position:fixed;left:16px;right:16px;top:50%;transform:translateY(-50%);width:auto;max-width:360px;margin:0 auto}
+  .calendar-day{font-size:13px}
+}
