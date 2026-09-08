@@ -2497,7 +2497,7 @@ function clearSearch(){
       "busIncluirCero"
     )
     .checked =
-      true;
+      false;
 
 
   refreshLinkedFilters();
