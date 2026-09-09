@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061b35">
+  <title>Ventas · Solo lectura</title>
+  <link rel="stylesheet" href="estilos.css?v=ventas1">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="btnBack" aria-label="Volver">←</button>
+    <div class="brand"><span class="brand-icon">♧</span><span>Ventas</span></div>
+    <div class="connection-pill" id="connectionPill">Solo lectura</div>
+  </header>
+
+  <main>
+    <section class="screen active" id="screen-home">
+      <div class="hero home-hero">
+        <div class="hero-icon">💰</div>
+        <h1>Ventas</h1>
+        <p>Consulta de ventas registradas</p>
+      </div>
+
+      <div class="home-card read-home-card">
+        <div class="menu-icon">☷</div>
+        <h2>Consultar ventas</h2>
+        <p>Busca por fecha, producto, venta, características, canal o socio. Este módulo no modifica la hoja de origen.</p>
+        <button class="primary-btn full" id="btnConsultSales">Consultar ventas →</button>
+      </div>
+
+      <div class="dataset-summary" id="homeDatasetSummary"></div>
+      <div class="info-box read-only-box">
+        ⓘ
+        <div>
+          <strong>Modo solo lectura</strong>
+          <p>La información de ventas se obtiene de Ventas2026 y el catálogo se complementa con la API de Stock. No se registran, editan ni eliminan ventas desde esta versión.</p>
+          <p id="dataStatus" class="data-status">Preparando datos…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-consult">
+      <div class="page-title compact">
+        <span class="section-icon">☷</span>
+        <div>
+          <h1>Consultar ventas</h1>
+          <p>Los filtros se combinan entre sí. Marca, categoría, tipo, color y talla se apoyan en el catálogo de Stock cuando está disponible.</p>
+        </div>
+      </div>
+
+      <div class="form-card consult-filters">
+        <div class="consult-grid consult-grid-extended">
+          <div class="date-filter-field">
+            <label for="consultDateDisplay">Fecha</label>
+            <div class="sale-date-picker" id="saleDatePicker">
+              <input id="consultDateDisplay" type="text" placeholder="Seleccionar fecha" readonly autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+              <input id="consultDate" type="hidden">
+              <button class="date-picker-toggle" id="consultDateToggle" type="button" aria-label="Abrir calendario" title="Abrir calendario">📅</button>
+              <div class="sale-calendar hidden" id="saleCalendar" role="dialog" aria-label="Calendario de ventas">
+                <div class="sale-calendar-head">
+                  <button type="button" class="calendar-nav" id="calendarPrev" aria-label="Mes anterior">‹</button>
+                  <strong id="calendarTitle">—</strong>
+                  <button type="button" class="calendar-nav" id="calendarNext" aria-label="Mes siguiente">›</button>
+                </div>
+                <div class="calendar-weekdays" aria-hidden="true">
+                  <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                </div>
+                <div class="calendar-days" id="calendarDays"></div>
+                <div class="calendar-legend"><span class="legend-dot"></span> Día con ventas</div>
+                <button type="button" class="text-btn full calendar-clear" id="calendarClear">Quitar fecha</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="consultCode">Código de producto</label>
+            <input id="consultCode" type="text" placeholder="Ej. A422">
+          </div>
+
+          <div>
+            <label for="consultSaleId">ID de venta</label>
+            <input id="consultSaleId" type="text" placeholder="Ej. V-0624">
+          </div>
+
+          <div>
+            <label for="consultBrand">Marca</label>
+            <div class="brand-filter-wrap" id="consultBrandWrap">
+              <input id="consultBrand" type="text" placeholder="Todas / escribe una marca" autocomplete="off">
+              <button type="button" class="brand-dropdown-toggle" id="btnBrandDropdown" aria-label="Mostrar marcas" aria-expanded="false">⌄</button>
+              <div class="brand-suggestions hidden" id="consultBrandSuggestions"></div>
+            </div>
+          </div>
+
+          <div>
+            <label for="consultCategory">Categoría</label>
+            <select id="consultCategory"><option value="">Todas</option></select>
+          </div>
+
+          <div>
+            <label for="consultType">Tipo</label>
+            <select id="consultType"><option value="">Todos</option></select>
+          </div>
+
+          <div>
+            <label for="consultColor">Color</label>
+            <select id="consultColor"><option value="">Todos</option></select>
+          </div>
+
+          <div>
+            <label for="consultSize">Talla</label>
+            <select id="consultSize"><option value="">Todas</option></select>
+          </div>
+
+          <div>
+            <label for="consultChannel">Canal</label>
+            <select id="consultChannel">
+              <option value="">Todos</option>
+              <option value="Tienda">Tienda</option>
+              <option value="Internet">Internet</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="consultPartner">Socio</label>
+            <select id="consultPartner"><option value="">Todos</option></select>
+          </div>
+        </div>
+
+        <button class="primary-btn full" id="btnFindSales">Buscar ventas →</button>
+        <button class="text-btn full" id="btnClearConsult">Limpiar filtros</button>
+      </div>
+
+      <div class="consult-actions"><button class="secondary-btn full" id="btnConsultToSales">← Volver a Ventas</button></div>
+    </section>
+
+    <section class="screen" id="screen-sales-results">
+      <div class="page-title compact">
+        <span class="section-icon">🔎</span>
+        <div><h1>Ventas encontradas</h1><p>La fecha más reciente aparece primero.</p></div>
+      </div>
+      <div class="filter-chips" id="consultChips"></div>
+      <div class="result-count"><strong id="salesResultCount">0</strong><span>ventas</span></div>
+      <div class="consult-results" id="salesResults"></div>
+      <div class="empty-state hidden" id="salesEmptyState">
+        <div>🔍</div>
+        <h3>No encontramos ventas</h3>
+        <p>Prueba quitando algún filtro o seleccionando otra fecha.</p>
+      </div>
+      <button class="secondary-btn full hidden" id="btnMoreResults">Mostrar más</button>
+      <div class="consult-actions">
+        <button class="primary-btn full" id="btnModifyConsult">← Modificar búsqueda</button>
+        <button class="secondary-btn full" id="btnResultsHome">Volver a Ventas</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-sale-detail">
+      <div class="page-title compact">
+        <span class="section-icon">🧾</span>
+        <div><h1>Detalle de venta</h1><p>Información registrada en la hoja de ventas.</p></div>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-product">
+          <div class="detail-visual" id="detailVisual">👟</div>
+          <div>
+            <div class="detail-title-line">
+              <h2 id="detailCode">—</h2>
+              <span class="internet-badge hidden" id="detailInternetBadge">Internet</span>
+            </div>
+            <p id="detailBrand">—</p>
+            <p id="detailDescription">—</p>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-stat"><small>ID de venta</small><strong id="detailSaleId">—</strong></div>
+          <div class="detail-stat"><small>Fecha</small><strong id="detailDate">—</strong></div>
+          <div class="detail-stat"><small>Talla</small><strong id="detailSize">—</strong></div>
+          <div class="detail-stat"><small>Precio de venta</small><strong id="detailPrice">—</strong></div>
+          <div class="detail-stat"><small>Canal</small><strong id="detailChannel">—</strong></div>
+          <div class="detail-stat"><small>Socio</small><strong id="detailPartner">—</strong></div>
+          <div class="detail-stat detail-wide"><small>Categoría · Tipo · Color</small><strong id="detailMeta">—</strong></div>
+        </div>
+      </div>
+
+      <div class="info-box">ⓘ <div><strong>Modo solo lectura</strong><p>Esta pantalla únicamente consulta información; no altera Ventas2026 ni el archivo de Stock.</p></div></div>
+
+      <div class="consult-actions">
+        <button class="secondary-btn full" id="btnSameProduct">Ver ventas de este código</button>
+        <button class="primary-btn full" id="btnBackResults">← Volver a resultados</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js?v=ventas1"></script>
+  <script src="app.js?v=ventas1"></script>
+</body>
+</html>
