@@ -38,8 +38,6 @@
 
       <div class="form-card consult-filters">
         <div class="consult-grid consult-grid-extended">
-          <div><label for="consultPurchaseCode">N.º de compra</label><input id="consultPurchaseCode" placeholder="Ej. C-0152" autocomplete="off"></div>
-          <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A433" autocomplete="off"></div>
           <div class="date-filter-field">
             <label for="consultDateDisplay">Fecha</label>
             <div class="purchase-date-picker" id="purchaseDatePicker">
@@ -60,6 +58,8 @@
               </div>
             </div>
           </div>
+          <div><label for="consultProductCode">Código producto</label><input id="consultProductCode" placeholder="Ej. A433" autocomplete="off"></div>
+          <div><label for="consultPurchaseCode">Código de compra</label><input id="consultPurchaseCode" placeholder="Ej. C-0152" autocomplete="off"></div>
           <div><label for="consultBrand">Marca</label><select id="consultBrand"><option value="">Todas las marcas</option></select></div>
           <div><label for="consultCategory">Categoría</label><select id="consultCategory"><option value="">Todas las categorías</option></select></div>
           <div><label for="consultType">Tipo</label><select id="consultType"><option value="">Todos los tipos</option></select></div>
@@ -103,7 +103,7 @@
       </div>
 
       <div class="detail-meta detail-meta-extended">
-        <div><small>N.º de compra</small><strong id="detailPurchase">—</strong></div>
+        <div><small>Código de compra</small><strong id="detailPurchase">—</strong></div>
         <div><small>Fecha</small><strong id="detailDate">—</strong></div>
         <div><small>Ingreso</small><strong id="detailEntry">—</strong></div>
         <div><small>Costo por par</small><strong id="detailUnitCost">—</strong></div>
