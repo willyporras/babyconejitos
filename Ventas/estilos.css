@@ -315,3 +315,203 @@
 @media (max-width:319px){
   #salesResults.consult-results{grid-template-columns:1fr}
 }
+
+/* =========================================================
+   VENTAS · UX MÓVIL v3
+   Dos tarjetas por fila, pero con lectura vertical dentro
+   de cada tarjeta. En pantallas angostas evita comprimir
+   imagen + texto en dos mini-columnas ilegibles.
+   ========================================================= */
+
+.sale-brand-line{
+  color:var(--text)!important;
+  font-weight:800;
+}
+.sale-meta-line{color:var(--muted)}
+.sale-partner-line{color:#53657a!important;font-weight:700}
+
+@media (max-width:760px){
+  /* Mantener dos resultados por fila en el uso móvil habitual. */
+  #salesResults.consult-results{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
+
+  /* Tarjetas generales: estructura vertical tipo catálogo.
+     Así cada dato dispone de todo el ancho de su tarjeta. */
+  #salesResults:not(.single-code-history) .sale-list-card{
+    padding:9px;
+    border-radius:16px;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-top{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    align-items:center;
+    gap:5px 6px;
+    margin-bottom:8px;
+  }
+
+  #salesResults:not(.single-code-history) .date-badge{
+    padding:4px 7px;
+    font-size:10.5px;
+    line-height:1.15;
+    white-space:nowrap;
+  }
+
+  #salesResults:not(.single-code-history) .sale-id-badge{
+    font-size:10.5px;
+    line-height:1.15;
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  #salesResults:not(.single-code-history) .internet-badge{
+    grid-column:1/-1;
+    justify-self:start;
+    padding:3px 7px;
+    font-size:9px;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-body{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:0;
+    align-items:start;
+  }
+
+  #salesResults:not(.single-code-history) .sale-thumb,
+  #salesResults:not(.single-code-history) .sale-thumb-fallback{
+    width:100%;
+    height:auto;
+    aspect-ratio:4 / 3;
+    border-radius:10px;
+    margin:0 0 9px;
+    object-fit:contain;
+    background:#eef4fb;
+  }
+
+  #salesResults:not(.single-code-history) .sale-thumb-fallback{
+    min-height:96px;
+    font-size:30px;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-main{
+    min-width:0;
+    padding:0 1px 7px;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-main h3{
+    margin:0 0 5px;
+    font-size:19px;
+    line-height:1.05;
+    letter-spacing:.01em;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-main p{
+    margin:3px 0;
+    font-size:11.5px;
+    line-height:1.26;
+    overflow-wrap:anywhere;
+  }
+
+  #salesResults:not(.single-code-history) .sale-brand-line{
+    font-size:12px;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-price{
+    grid-column:auto;
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:6px;
+    margin-top:auto;
+    padding:8px 1px 0;
+    border-top:1px solid var(--line);
+    text-align:left;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-price>span{
+    max-width:58px;
+    font-size:9.5px;
+    line-height:1.12;
+    font-weight:750;
+  }
+
+  #salesResults:not(.single-code-history) .sale-list-price>strong{
+    font-size:17px;
+    line-height:1;
+    white-space:nowrap;
+  }
+
+  #salesResults:not(.single-code-history) .sale-card-detail-link{
+    grid-column:auto;
+    margin-top:7px;
+    padding-top:1px;
+    text-align:center;
+    font-size:11px;
+    line-height:1.15;
+  }
+
+  /* En la búsqueda de un único código sí hay ancho completo;
+     aquí conviene conservar foto y datos lado a lado. */
+  #salesResults.single-code-history .product-history-hero{
+    padding:11px;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-list-body{
+    grid-template-columns:96px minmax(0,1fr);
+    column-gap:11px;
+    row-gap:8px;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-thumb,
+  #salesResults.single-code-history .product-history-hero .sale-thumb-fallback{
+    width:96px;
+    height:122px;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-list-main h3{
+    font-size:23px;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-list-main p{
+    font-size:12px;
+    line-height:1.28;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-list-price{
+    grid-column:1/-1;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    text-align:left;
+  }
+
+  #salesResults.single-code-history .product-history-hero .sale-card-detail-link{
+    grid-column:1/-1;
+  }
+
+  /* Historial sin foto: compacto, pero todavía legible. */
+  #salesResults.single-code-history .sale-history-card{
+    padding:9px;
+  }
+
+  #salesResults.single-code-history .history-sale-data{
+    grid-template-columns:1fr;
+    gap:5px;
+  }
+
+  #salesResults.single-code-history .history-sale-data>div{
+    padding:7px;
+  }
+
+  #salesResults.single-code-history .history-sale-data small{font-size:9.5px}
+  #salesResults.single-code-history .history-sale-data strong{font-size:11.5px}
+}
+
+/* Mantener una columna únicamente en dispositivos excepcionalmente estrechos. */
+@media (max-width:319px){
+  #salesResults.consult-results{grid-template-columns:1fr}
+}

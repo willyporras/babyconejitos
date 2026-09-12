@@ -703,10 +703,11 @@ function isSingleCodeHistoryMode(){
 
 function saleCardHtml(s, latest=false){
   const brand = saleBrand(s);
+  const categoryType = [s.category, s.type].filter(Boolean).join(" · ");
   const colorSize = [
     s.color,
-    s.size !== null && s.size !== undefined && s.size !== "" ? String(s.size) : ""
-  ].filter(Boolean).join(" ");
+    s.size !== null && s.size !== undefined && s.size !== "" ? `Talla ${s.size}` : ""
+  ].filter(Boolean).join(" · ");
 
   return `
     <div class="sale-list-top">
@@ -719,11 +720,10 @@ function saleCardHtml(s, latest=false){
       ${visualHtml(s)}
       <div class="sale-list-main">
         <h3>${escapeHtml(s.code)}</h3>
-        ${s.category ? `<p>${escapeHtml(s.category)}</p>` : ''}
-        ${colorSize ? `<p>${escapeHtml(colorSize)}</p>` : ''}
-        ${s.type ? `<p>${escapeHtml(s.type)}</p>` : ''}
-        ${brand ? `<p>${escapeHtml(brand)}</p>` : ''}
-        ${s.partner ? `<p>Socio ${escapeHtml(s.partner)}</p>` : ''}
+        ${brand ? `<p class="sale-brand-line">${escapeHtml(brand)}</p>` : ''}
+        ${categoryType ? `<p class="sale-meta-line">${escapeHtml(categoryType)}</p>` : ''}
+        ${colorSize ? `<p class="sale-meta-line">${escapeHtml(colorSize)}</p>` : ''}
+        ${s.partner ? `<p class="sale-partner-line">Socio ${escapeHtml(s.partner)}</p>` : ''}
       </div>
       <div class="sale-list-price">
         <span>Precio de venta</span>
