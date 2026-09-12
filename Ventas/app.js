@@ -702,6 +702,12 @@ function isSingleCodeHistoryMode(){
 }
 
 function saleCardHtml(s, latest=false){
+  const brand = saleBrand(s);
+  const colorSize = [
+    s.color,
+    s.size !== null && s.size !== undefined && s.size !== "" ? String(s.size) : ""
+  ].filter(Boolean).join(" ");
+
   return `
     <div class="sale-list-top">
       <span class="date-badge">${escapeHtml(formatDate(s.date))}</span>
@@ -713,15 +719,17 @@ function saleCardHtml(s, latest=false){
       ${visualHtml(s)}
       <div class="sale-list-main">
         <h3>${escapeHtml(s.code)}</h3>
-        <p>${escapeHtml([saleBrand(s),s.category].filter(Boolean).join(" · ") || "Producto")}</p>
-        <p>${escapeHtml([s.type,s.color, s.size!==null ? `Talla ${s.size}` : ""].filter(Boolean).join(" · "))}</p>
+        ${s.category ? `<p>${escapeHtml(s.category)}</p>` : ''}
+        ${colorSize ? `<p>${escapeHtml(colorSize)}</p>` : ''}
+        ${s.type ? `<p>${escapeHtml(s.type)}</p>` : ''}
+        ${brand ? `<p>${escapeHtml(brand)}</p>` : ''}
         ${s.partner ? `<p>Socio ${escapeHtml(s.partner)}</p>` : ''}
-        <span class="sale-list-arrow">Ver detalle →</span>
       </div>
       <div class="sale-list-price">
         <span>Precio de venta</span>
         <strong>${formatMoney(s.price)}</strong>
       </div>
+      <span class="sale-list-arrow sale-card-detail-link">Ver detalle →</span>
     </div>
   `;
 }
