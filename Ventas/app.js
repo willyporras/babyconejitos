@@ -41,6 +41,7 @@ const state = {
   screen: "screen-home",
   selectedSale: null,
   currentResults: [],
+  currentFilters: null,
   renderedCount: 0,
   calendarCursor: startOfMonth(new Date()),
   detailReturn: "screen-sales-results",
@@ -653,6 +654,7 @@ function runSearch(){
   }
 
   const filters = getConsultFilters();
+  state.currentFilters = {...filters};
   state.currentResults = sales.filter(s=>saleMatchesFilters(s,filters)).sort(saleSort);
   state.renderedCount = 0;
   renderConsultChips(filters);
@@ -678,6 +680,72 @@ function renderConsultChips(f){
     : '<span class="chip">Todas las ventas</span>';
 }
 
+function isSingleCodeHistoryMode(){
+  const f = state.currentFilters || {};
+  if(!text(f.code)) return false;
+
+  // Este diseño especial se usa solamente cuando Código es el único filtro.
+  const otherFilters = [
+    f.date,f.saleId,f.brand,f.category,f.type,
+    f.color,f.size,f.channel,f.partner
+  ];
+  if(otherFilters.some(value=>text(value))) return false;
+
+  const codes = new Set(
+    state.currentResults
+      .map(s=>normalized(s.code))
+      .filter(Boolean)
+  );
+
+  // Evita agrupar si una búsqueda parcial coincide con varios códigos.
+  return codes.size === 1;
+}
+
+function saleCardHtml(s, latest=false){
+  return `
+    <div class="sale-list-top">
+      <span class="date-badge">${escapeHtml(formatDate(s.date))}</span>
+      <span class="sale-id-badge">${escapeHtml(s.id)}</span>
+      ${latest ? '<span class="latest-sale-badge">Última venta</span>' : ''}
+      ${s.channel === "Internet" ? '<span class="internet-badge">Internet</span>' : ''}
+    </div>
+    <div class="sale-list-body">
+      ${visualHtml(s)}
+      <div class="sale-list-main">
+        <h3>${escapeHtml(s.code)}</h3>
+        <p>${escapeHtml([saleBrand(s),s.category].filter(Boolean).join(" · ") || "Producto")}</p>
+        <p>${escapeHtml([s.type,s.color, s.size!==null ? `Talla ${s.size}` : ""].filter(Boolean).join(" · "))}</p>
+        ${s.partner ? `<p>Socio ${escapeHtml(s.partner)}</p>` : ''}
+        <span class="sale-list-arrow">Ver detalle →</span>
+      </div>
+      <div class="sale-list-price">
+        <span>Precio de venta</span>
+        <strong>${formatMoney(s.price)}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function compactHistoryCardHtml(s){
+  return `
+    <div class="sale-list-top">
+      <span class="date-badge">${escapeHtml(formatDate(s.date))}</span>
+      <span class="sale-id-badge">${escapeHtml(s.id)}</span>
+      ${s.channel === "Internet" ? '<span class="internet-badge">Internet</span>' : ''}
+    </div>
+    <div class="history-sale-data">
+      <div><small>Talla</small><strong>${escapeHtml(s.size ?? "—")}</strong></div>
+      <div><small>Socio</small><strong>${escapeHtml(s.partner || "—")}</strong></div>
+      <div><small>Canal</small><strong>${escapeHtml(s.channel || "Tienda")}</strong></div>
+    </div>
+    <div class="sale-list-price compact-price">
+      <span>Precio de venta</span>
+      <strong>${formatMoney(s.price)}</strong>
+    </div>
+    <span class="sale-list-arrow compact-arrow">Ver detalle →</span>
+  `;
+}
+
 function renderResultBatch(reset=false){
   if(reset) state.renderedCount = 0;
   const container = $("salesResults");
@@ -690,7 +758,52 @@ function renderResultBatch(reset=false){
   empty.classList.toggle("hidden", state.currentResults.length > 0);
 
   if(!state.currentResults.length){
+    container.classList.remove("single-code-history");
     more.classList.add("hidden");
+    return;
+  }
+
+  const singleCodeMode = isSingleCodeHistoryMode();
+  container.classList.toggle("single-code-history", singleCodeMode);
+
+  // Cuando Código es el único filtro y todos los resultados pertenecen
+  // al mismo código, mostramos la foto una sola vez en la última venta.
+  if(singleCodeMode){
+    if(reset){
+      const latest = state.currentResults[0];
+      const hero = document.createElement("button");
+      hero.type = "button";
+      hero.className = "sale-list-card product-history-hero";
+      hero.innerHTML = saleCardHtml(latest,true);
+      hero.addEventListener("click",()=>openSaleDetail(latest));
+      container.appendChild(hero);
+      state.renderedCount = 1;
+
+      if(state.currentResults.length > 1){
+        const title = document.createElement("div");
+        title.className = "history-section-title";
+        title.innerHTML = `<strong>Ventas anteriores</strong><span>${state.currentResults.length - 1} registros</span>`;
+        container.appendChild(title);
+      }
+    }
+
+    const start = state.renderedCount;
+    const end = Math.min(start + RESULT_BATCH_SIZE, state.currentResults.length);
+    const batch = state.currentResults.slice(start,end);
+    const fragment = document.createDocumentFragment();
+
+    batch.forEach(s=>{
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sale-history-card";
+      button.innerHTML = compactHistoryCardHtml(s);
+      button.addEventListener("click",()=>openSaleDetail(s));
+      fragment.appendChild(button);
+    });
+
+    container.appendChild(fragment);
+    state.renderedCount = end;
+    more.classList.toggle("hidden", end >= state.currentResults.length);
     return;
   }
 
@@ -703,23 +816,7 @@ function renderResultBatch(reset=false){
     const button = document.createElement("button");
     button.type = "button";
     button.className = "sale-list-card";
-    button.innerHTML = `
-      <div class="sale-list-top">
-        <span class="date-badge">${escapeHtml(formatDate(s.date))}</span>
-        <span class="sale-id-badge">${escapeHtml(s.id)}</span>
-        ${s.channel === "Internet" ? '<span class="internet-badge">Internet</span>' : ''}
-      </div>
-      <div class="sale-list-body">
-        ${visualHtml(s)}
-        <div class="sale-list-main">
-          <h3>${escapeHtml(s.code)}</h3>
-          <p>${escapeHtml([saleBrand(s),s.category].filter(Boolean).join(" · ") || "Producto")}</p>
-          <p>${escapeHtml([s.type,s.color, s.size!==null ? `Talla ${s.size}` : ""].filter(Boolean).join(" · "))}</p>
-          <span class="sale-list-arrow">Ver detalle →</span>
-        </div>
-        <div class="sale-list-price">${formatMoney(s.price)}<small>${escapeHtml(s.partner ? `Socio ${s.partner}` : "")}</small></div>
-      </div>
-    `;
+    button.innerHTML = saleCardHtml(s,false);
     button.addEventListener("click",()=>openSaleDetail(s));
     fragment.appendChild(button);
   });
@@ -762,6 +859,7 @@ function showSalesForSameProduct(){
   if(!s) return;
   clearConsult(true);
   $("consultCode").value = s.code;
+  state.currentFilters = {date:"",code:s.code,saleId:"",brand:"",category:"",type:"",color:"",size:"",channel:"",partner:""};
   state.currentResults = sales
     .filter(row=>normalized(row.code)===normalized(s.code))
     .sort(saleSort);
